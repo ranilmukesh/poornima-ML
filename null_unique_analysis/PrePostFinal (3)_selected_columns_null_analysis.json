@@ -1,0 +1,317 @@
+{
+  "PreRalmlperday": {
+    "Null Count": 5518,
+    "Null Percentage (%)": 99.26245727648858,
+    "Dtype": "object"
+  },
+  "PreRstocurrent": {
+    "Null Count": 5517,
+    "Null Percentage (%)": 99.24446842957366,
+    "Dtype": "object"
+  },
+  "PreRdrinktype": {
+    "Null Count": 5506,
+    "Null Percentage (%)": 99.04659111350962,
+    "Dtype": "object"
+  },
+  "PreRallastmonthuse": {
+    "Null Count": 5504,
+    "Null Percentage (%)": 99.0106134196798,
+    "Dtype": "object"
+  },
+  "PreRlastmonthavg": {
+    "Null Count": 5502,
+    "Null Percentage (%)": 98.97463572584996,
+    "Dtype": "object"
+  },
+  "PreRstoyear": {
+    "Null Count": 5501,
+    "Null Percentage (%)": 98.95664687893506,
+    "Dtype": "float64"
+  },
+  "PreRalthreemonthsuse": {
+    "Null Count": 5497,
+    "Null Percentage (%)": 98.88469149127542,
+    "Dtype": "object"
+  },
+  "PreRalyear": {
+    "Null Count": 5492,
+    "Null Percentage (%)": 98.79474725670084,
+    "Dtype": "object"
+  },
+  "PreRtobsmoking": {
+    "Null Count": 5491,
+    "Null Percentage (%)": 98.77675840978594,
+    "Dtype": "object"
+  },
+  "PreRtobaverage": {
+    "Null Count": 5489,
+    "Null Percentage (%)": 98.7407807159561,
+    "Dtype": "float64"
+  },
+  "PreRstodailyuse": {
+    "Null Count": 5486,
+    "Null Percentage (%)": 98.68681417521137,
+    "Dtype": "float64"
+  },
+  "PreRvigorousduration": {
+    "Null Count": 5395,
+    "Null Percentage (%)": 97.04982910595432,
+    "Dtype": "object"
+  },
+  "PreRmoderateduration": {
+    "Null Count": 5314,
+    "Null Percentage (%)": 95.59273250584639,
+    "Dtype": "object"
+  },
+  "PreRmildactivityduration": {
+    "Null Count": 5272,
+    "Null Percentage (%)": 94.83720093542004,
+    "Dtype": "object"
+  },
+  "PreRstsocialvalue": {
+    "Null Count": 5266,
+    "Null Percentage (%)": 94.72926785393057,
+    "Dtype": "float64"
+  },
+  "PreRstfinancialvalue": {
+    "Null Count": 5245,
+    "Null Percentage (%)": 94.3515020687174,
+    "Dtype": "float64"
+  },
+  "PreRsthealthvalue": {
+    "Null Count": 5241,
+    "Null Percentage (%)": 94.27954668105775,
+    "Dtype": "float64"
+  },
+  "PreRstfamilyvalue": {
+    "Null Count": 5241,
+    "Null Percentage (%)": 94.27954668105775,
+    "Dtype": "float64"
+  },
+  "PreRstworkvalue": {
+    "Null Count": 5240,
+    "Null Percentage (%)": 94.26155783414283,
+    "Dtype": "float64"
+  },
+  "PreRsleepquality": {
+    "Null Count": 5210,
+    "Null Percentage (%)": 93.72189242669545,
+    "Dtype": "object"
+  },
+  "PreRdrink": {
+    "Null Count": 5208,
+    "Null Percentage (%)": 93.68591473286563,
+    "Dtype": "object"
+  },
+  "PreRpopcorn": {
+    "Null Count": 5207,
+    "Null Percentage (%)": 93.66792588595071,
+    "Dtype": "object"
+  },
+  "PreRsweet": {
+    "Null Count": 5207,
+    "Null Percentage (%)": 93.66792588595071,
+    "Dtype": "object"
+  },
+  "PreRstaplefood": {
+    "Null Count": 5205,
+    "Null Percentage (%)": 93.63194819212089,
+    "Dtype": "object"
+  },
+  "PreRmeat": {
+    "Null Count": 5196,
+    "Null Percentage (%)": 93.47004856988667,
+    "Dtype": "object"
+  },
+  "PreRfriedfood": {
+    "Null Count": 5193,
+    "Null Percentage (%)": 93.41608202914193,
+    "Dtype": "object"
+  },
+  "PreRpresentoccupation": {
+    "Null Count": 5192,
+    "Null Percentage (%)": 93.39809318222702,
+    "Dtype": "object"
+  },
+  "PreRhip": {
+    "Null Count": 5191,
+    "Null Percentage (%)": 93.38010433531211,
+    "Dtype": "float64"
+  },
+  "PreRskipbreakfast": {
+    "Null Count": 5188,
+    "Null Percentage (%)": 93.32613779456736,
+    "Dtype": "object"
+  },
+  "PreRlessvegetable": {
+    "Null Count": 5188,
+    "Null Percentage (%)": 93.32613779456736,
+    "Dtype": "object"
+  },
+  "PreRmilk": {
+    "Null Count": 5187,
+    "Null Percentage (%)": 93.30814894765246,
+    "Dtype": "object"
+  },
+  "PreRlessfruit": {
+    "Null Count": 5180,
+    "Null Percentage (%)": 93.18222701924806,
+    "Dtype": "object"
+  },
+  "PreRlessfiber": {
+    "Null Count": 5177,
+    "Null Percentage (%)": 93.12826047850334,
+    "Dtype": "object"
+  },
+  "PreReducation": {
+    "Null Count": 5162,
+    "Null Percentage (%)": 92.85842777477964,
+    "Dtype": "object"
+  },
+  "PreRheight": {
+    "Null Count": 5138,
+    "Null Percentage (%)": 92.42669544882173,
+    "Dtype": "float64"
+  },
+  "PreRweight": {
+    "Null Count": 5136,
+    "Null Percentage (%)": 92.3907177549919,
+    "Dtype": "float64"
+  },
+  "PreRwaist": {
+    "Null Count": 5115,
+    "Null Percentage (%)": 92.01295196977874,
+    "Dtype": "float64"
+  },
+  "PreRmaritalstatus": {
+    "Null Count": 5084,
+    "Null Percentage (%)": 91.45529771541644,
+    "Dtype": "object"
+  },
+  "PreRtobdaily": {
+    "Null Count": 5051,
+    "Null Percentage (%)": 90.86166576722432,
+    "Dtype": "object"
+  },
+  "PreRtobuse": {
+    "Null Count": 5050,
+    "Null Percentage (%)": 90.8436769203094,
+    "Dtype": "object"
+  },
+  "PreRgender": {
+    "Null Count": 5050,
+    "Null Percentage (%)": 90.8436769203094,
+    "Dtype": "object"
+  },
+  "PreRdiasister": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRcurrentworking": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRdiabrother": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRtobdailyuse": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRstodaily": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRarea": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRdiamother": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRdiafather": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRalcoholuse": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRallastmonth": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRtobcurrent": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRalthreemonths": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreRstouse": {
+    "Null Count": 5049,
+    "Null Percentage (%)": 90.82568807339449,
+    "Dtype": "object"
+  },
+  "PreBLPPBS": {
+    "Null Count": 1676,
+    "Null Percentage (%)": 30.149307429393772,
+    "Dtype": "float64"
+  },
+  "PreBLCHOLESTEROLLDL": {
+    "Null Count": 399,
+    "Null Percentage (%)": 7.177549919050189,
+    "Dtype": "float64"
+  },
+  "PreBLFBS": {
+    "Null Count": 368,
+    "Null Percentage (%)": 6.619895664687893,
+    "Dtype": "float64"
+  },
+  "PostBLHBA1C": {
+    "Null Count": 285,
+    "Null Percentage (%)": 5.126821370750135,
+    "Dtype": "float64"
+  },
+  "PreBLHBA1C": {
+    "Null Count": 201,
+    "Null Percentage (%)": 3.6157582298974638,
+    "Dtype": "float64"
+  },
+  "PreBLTRIGLYCERIDES": {
+    "Null Count": 194,
+    "Null Percentage (%)": 3.4898363014930744,
+    "Dtype": "float64"
+  },
+  "PreBLCHOLESTEROL": {
+    "Null Count": 98,
+    "Null Percentage (%)": 1.7629069976614498,
+    "Dtype": "float64"
+  },
+  "PreBLAge": {
+    "Null Count": 95,
+    "Null Percentage (%)": 1.7089404569167115,
+    "Dtype": "float64"
+  },
+  "PostRgroupname": {
+    "Null Count": 1,
+    "Null Percentage (%)": 0.017988846914912753,
+    "Dtype": "float64"
+  }
+}
