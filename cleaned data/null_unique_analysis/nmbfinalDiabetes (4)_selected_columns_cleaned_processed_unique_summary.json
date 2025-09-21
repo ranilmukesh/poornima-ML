@@ -1,0 +1,548 @@
+{
+  "PreBLPPBS": {
+    "unique_count": 300,
+    "top": 121.0,
+    "top_count": 10,
+    "unique_preview": "375.0, 116.0, 154.0, 317.0, 165.0, 180.0, 125.0, 97.0, 245.0, 87.0, 139.0, 247.0, 208.0, 340.0, 411.0, 458.0, 194.0, 397.0, 121.0, 252.0, ...",
+    "dtype": "float64"
+  },
+  "PreBLTRIGLYCERIDES": {
+    "unique_count": 278,
+    "top": 141.0,
+    "top_count": 14,
+    "unique_preview": "651.0, 83.0, 206.0, 156.0, 190.0, 155.0, 90.0, 110.0, 293.0, 249.0, 141.0, 92.0, 134.0, 395.0, 315.0, 157.0, 197.0, 289.0, 165.0, 244.0, ...",
+    "dtype": "float64"
+  },
+  "PreBLFBS": {
+    "unique_count": 233,
+    "top": 98.0,
+    "top_count": 14,
+    "unique_preview": "273.0, 88.0, 121.0, 149.0, 111.0, 95.0, 143.0, 134.0, 145.0, 94.0, 108.0, 107.0, 122.0, 308.0, 280.0, 282.0, 163.0, 256.0, 207.0, 102.0, ...",
+    "dtype": "float64"
+  },
+  "PreBLCHOLESTEROL": {
+    "unique_count": 191,
+    "top": 163.0,
+    "top_count": 16,
+    "unique_preview": "199.0, 146.0, 155.0, 176.0, 164.0, 137.0, 186.0, 171.0, 184.0, 191.0, 129.0, 207.0, 210.0, 284.0, 158.0, 102.0, 261.0, 178.0, 293.0, 118.0, ...",
+    "dtype": "float64"
+  },
+  "PreRweight": {
+    "unique_count": 163,
+    "top": 60.0,
+    "top_count": 52,
+    "unique_preview": "65.0, 92.0, 69.3, 67.0, 60.0, 66.2, 80.0, 72.0, 53.0, 98.0, 78.0, 57.0, 54.2, 69.1, 70.0, 84.0, 44.0, 60.8, 66.0, 54.0, ...",
+    "dtype": "float64"
+  },
+  "PreBLCHOLESTEROLLDL": {
+    "unique_count": 159,
+    "top": 91.0,
+    "top_count": 19,
+    "unique_preview": "84.0, 74.0, 79.0, 94.0, 53.0, 114.0, 111.0, 92.0, 106.0, 68.0, 137.0, 128.0, 113.0, 95.0, 170.0, 69.0, 93.0, 36.0, 149.0, 102.0, ...",
+    "dtype": "float64"
+  },
+  "systolic": {
+    "unique_count": 102,
+    "top": 120.0,
+    "top_count": 71,
+    "unique_preview": "160.0, 123.0, 121.0, 134.0, 164.0, 150.0, 117.0, 120.0, 149.0, 99.0, 158.0, 144.0, 163.0, 105.0, 128.0, 159.0, 135.0, 133.0, 109.0, 147.0, ...",
+    "dtype": "float64"
+  },
+  "PostBLHBA1C": {
+    "unique_count": 100,
+    "top": 5.8,
+    "top_count": 26,
+    "unique_preview": "5.0, 6.4, 7.5, 7.1, 7.9, 5.5, 6.8, 6.6, 4.9, 8.4, 9.1, 8.3, 6.2, 10.1, 9.7, 5.9, 10.8, 10.2, 11.3, 8.6, ...",
+    "dtype": "float64"
+  },
+  "PreRsystolicfirst": {
+    "unique_count": 99,
+    "top": 120.0,
+    "top_count": 73,
+    "unique_preview": "160.0, 123.0, 119.0, 134.0, 152.0, 150.0, 116.0, 120.0, 149.0, 99.0, 158.0, 144.0, 163.0, 100.0, 128.0, 159.0, 135.0, 131.0, 109.0, 147.0, ...",
+    "dtype": "float64"
+  },
+  "PreBLHBA1C": {
+    "unique_count": 95,
+    "top": 7.5,
+    "top_count": 27,
+    "unique_preview": "9.4, 5.3, 6.4, 7.4, 6.7, 5.8, 10.8, 7.5, 6.6, 7.8, 6.2, 9.0, 9.9, 12.8, 7.0, 9.6, 7.2, 11.0, 6.0, 12.3, ...",
+    "dtype": "float64"
+  },
+  "PreRsystolicsecond": {
+    "unique_count": 93,
+    "top": 120.0,
+    "top_count": 58,
+    "unique_preview": "149.0, 121.0, 164.0, 127.0, 117.0, 110.0, 130.0, 105.0, 142.0, 133.0, 116.0, 120.0, 126.0, 146.0, 135.0, 140.0, 147.0, 158.0, 134.0, 124.0, ...",
+    "dtype": "float64"
+  },
+  "PostRsystolicfirst": {
+    "unique_count": 91,
+    "top": 120.0,
+    "top_count": 79,
+    "unique_preview": "117.0, 153.0, 114.0, 138.0, 152.0, 128.0, 145.0, 140.0, 120.0, 98.0, 158.0, 122.0, 110.0, 190.0, 109.0, 143.0, 135.0, 148.0, 127.0, 124.0, ...",
+    "dtype": "float64"
+  },
+  "PostRsystolicsecond": {
+    "unique_count": 80,
+    "top": 120.0,
+    "top_count": 51,
+    "unique_preview": "112.0, 123.0, 140.0, 110.0, 165.0, 143.0, 124.0, 115.0, 136.0, 126.0, 119.0, 89.0, 130.0, 120.0, 127.0, 138.0, 141.0, 117.0, 149.0, 125.0, ...",
+    "dtype": "float64"
+  },
+  "PreRdiaage": {
+    "unique_count": 73,
+    "top": 50.0,
+    "top_count": 55,
+    "unique_preview": "9.0, 2.0, 54.0, 38.0, 43.0, 66.0, 40.0, 50.0, 49.0, 63.0, 36.0, 56.0, 64.0, 35.0, 48.0, 52.0, 6.0, 46.0, 45.0, 44.0, ...",
+    "dtype": "float64"
+  },
+  "Diabetic_Duration(years)": {
+    "unique_count": 62,
+    "top": 0.0,
+    "top_count": 320,
+    "unique_preview": "47.0, 0.0, 43.0, 10.0, 5.0, 2.0, 8.0, 1.0, 4.0, 30.0, 48.0, 3.0, 60.0, 11.0, 20.0, 9.0, 54.0, 67.0, 22.0, 55.0, ...",
+    "dtype": "float64"
+  },
+  "diastolic": {
+    "unique_count": 62,
+    "top": 80.0,
+    "top_count": 90,
+    "unique_preview": "78.0, 76.0, 86.0, 105.0, 98.0, 82.0, 90.0, 70.0, 103.0, 80.0, 93.0, 81.0, 75.0, 68.0, 71.0, 97.0, 89.0, 84.0, 85.0, 77.0, ...",
+    "dtype": "float64"
+  },
+  "PreRdiastolicfirst": {
+    "unique_count": 61,
+    "top": 80.0,
+    "top_count": 83,
+    "unique_preview": "74.0, 76.0, 86.0, 93.0, 95.0, 82.0, 90.0, 70.0, 103.0, 80.0, 89.0, 104.0, 81.0, 75.0, 68.0, 71.0, 97.0, 87.0, 84.0, 85.0, ...",
+    "dtype": "float64"
+  },
+  "PreRheight": {
+    "unique_count": 61,
+    "top": 162.0,
+    "top_count": 51,
+    "unique_preview": "164.0, 159.0, 156.0, 172.0, 164.592, 161.0, 175.0, 152.0, 170.0, 153.0, 150.0, 154.0, 167.0, 142.0, 155.0, 177.0, 158.0, 146.0, 168.0, 162.0, ...",
+    "dtype": "float64"
+  },
+  "PostRdiastolicfirst": {
+    "unique_count": 61,
+    "top": 80.0,
+    "top_count": 89,
+    "unique_preview": "74.0, 79.0, 89.0, 90.0, 70.0, 88.0, 103.0, 77.0, 81.0, 97.0, 83.0, 69.0, 91.0, 86.0, 80.0, 72.0, 82.0, 124.0, 95.0, 106.0, ...",
+    "dtype": "float64"
+  },
+  "PreRwaist": {
+    "unique_count": 59,
+    "top": 90.0,
+    "top_count": 47,
+    "unique_preview": "87.0, 90.0, 120.0, 89.0, 105.0, 84.0, 106.0, 102.0, 92.0, 99.0, 112.0, 107.0, 78.0, 93.0, 97.0, 79.0, 88.0, 82.0, 70.0, 94.0, ...",
+    "dtype": "float64"
+  },
+  "PreRhip": {
+    "unique_count": 58,
+    "top": 90.0,
+    "top_count": 63,
+    "unique_preview": "94.0, 96.0, 112.0, 75.0, 101.0, 110.0, 106.0, 87.0, 107.0, 93.0, 98.0, 100.0, 104.0, 105.0, 86.0, 115.0, 84.0, 95.0, 103.0, 90.0, ...",
+    "dtype": "float64"
+  },
+  "postblage": {
+    "unique_count": 54,
+    "top": 60.0,
+    "top_count": 72,
+    "unique_preview": "56.0, 46.0, 45.0, 65.0, 64.0, 36.0, 43.0, 41.0, 68.0, 74.0, 48.0, 51.0, 63.0, 60.0, 47.0, 69.0, 42.0, 49.0, 50.0, 57.0, ...",
+    "dtype": "float64"
+  },
+  "PreBLAge": {
+    "unique_count": 54,
+    "top": 60.0,
+    "top_count": 72,
+    "unique_preview": "56.0, 46.0, 45.0, 65.0, 64.0, 36.0, 43.0, 41.0, 68.0, 74.0, 48.0, 51.0, 63.0, 60.0, 47.0, 69.0, 42.0, 49.0, 50.0, 57.0, ...",
+    "dtype": "float64"
+  },
+  "PreRdiastolicsecond": {
+    "unique_count": 53,
+    "top": 80.0,
+    "top_count": 66,
+    "unique_preview": "78.0, 83.0, 105.0, 98.0, 82.0, 60.0, 90.0, 65.0, 71.0, 89.0, 72.0, 70.0, 91.0, 84.0, 93.0, 102.0, 94.0, 80.0, 87.0, 79.0, ...",
+    "dtype": "float64"
+  },
+  "PostRdiastolicsecond": {
+    "unique_count": 49,
+    "top": 80.0,
+    "top_count": 69,
+    "unique_preview": "79.0, 86.0, 85.0, 70.0, 91.0, 76.0, 99.0, 132.0, 77.0, 82.0, 69.0, 92.0, 80.0, 90.0, 108.0, 87.0, 100.0, 81.0, 83.0, 75.0, ...",
+    "dtype": "float64"
+  },
+  "PreRstsocialvalue": {
+    "unique_count": 10,
+    "top": 1.0,
+    "top_count": 264,
+    "unique_preview": "1.0, 2.0, 3.0, 7.0, 10.0, 5.0, 4.0, 8.0, 6.0, 9.0",
+    "dtype": "float64"
+  },
+  "PreRstfinancialvalue": {
+    "unique_count": 10,
+    "top": 1.0,
+    "top_count": 230,
+    "unique_preview": "3.0, 2.0, 9.0, 1.0, 10.0, 7.0, 8.0, 5.0, 4.0, 6.0",
+    "dtype": "float64"
+  },
+  "PreRstfamilyvalue": {
+    "unique_count": 10,
+    "top": 1.0,
+    "top_count": 217,
+    "unique_preview": "1.0, 4.0, 7.0, 3.0, 10.0, 6.0, 2.0, 5.0, 8.0, 9.0",
+    "dtype": "float64"
+  },
+  "PreRsthealthvalue": {
+    "unique_count": 10,
+    "top": 1.0,
+    "top_count": 204,
+    "unique_preview": "1.0, 2.0, 4.0, 10.0, 3.0, 7.0, 6.0, 5.0, 8.0, 9.0",
+    "dtype": "float64"
+  },
+  "PreRstworkvalue": {
+    "unique_count": 10,
+    "top": 1.0,
+    "top_count": 219,
+    "unique_preview": "5.0, 3.0, 8.0, 1.0, 4.0, 6.0, 2.0, 7.0, 10.0, 9.0",
+    "dtype": "float64"
+  },
+  "PreRpresentoccupation": {
+    "unique_count": 9,
+    "top": "Homemaker",
+    "top_count": 216,
+    "unique_preview": "Clerical/medium business, Professional/Executive/Big business, Unskilled/ landless laborer, Retired, Self-employed/ skilled, Homemaker, Unemployed(able to work), Unemployed(unable to work), Others(specify if any)",
+    "dtype": "object"
+  },
+  "PreRstaplefood": {
+    "unique_count": 7,
+    "top": "Rice",
+    "top_count": 366,
+    "unique_preview": "Wheat, Rice, Maize, Ragi, Bajra, Other, Jowar",
+    "dtype": "object"
+  },
+  "PreReducation": {
+    "unique_count": 7,
+    "top": "Up to high school",
+    "top_count": 213,
+    "unique_preview": "Up to high school, Up to intermediate, Up to primary school, Up to university, No formal schooling, University completed or higher, specify if any",
+    "dtype": "object"
+  },
+  "PreRalmlperday": {
+    "unique_count": 5,
+    "top": "60 ml",
+    "top_count": 29,
+    "unique_preview": "90 ml, 60 ml, 500 ml, 250 ml, 180 ml",
+    "dtype": "object"
+  },
+  "PreRstoyear": {
+    "unique_count": 5,
+    "top": 5.0,
+    "top_count": 79,
+    "unique_preview": "3.0, 1.0, 5.0, 4.0, 2.0",
+    "dtype": "float64"
+  },
+  "PreRmoderateduration": {
+    "unique_count": 5,
+    "top": "10 - 30mins",
+    "top_count": 204,
+    "unique_preview": "30mins - 1hr, at least 10 mins, 10 - 30mins, 1hr - 1.5hrs, >1.5hrs",
+    "dtype": "object"
+  },
+  "PreRalyear": {
+    "unique_count": 5,
+    "top": "More than 10 yrs",
+    "top_count": 56,
+    "unique_preview": "6 mon to 1 yrs, 1 to 5 yrs, More than 10 yrs, < 6 months, 5 to 10 yrs",
+    "dtype": "object"
+  },
+  "PreRtobsmoking": {
+    "unique_count": 5,
+    "top": "< 6 months",
+    "top_count": 42,
+    "unique_preview": "More than 10 yrs, 6 mon to 1 yrs, < 6 months, 1 to 5 yrs, 5 to 10 yrs",
+    "dtype": "object"
+  },
+  "PreRmildactivityduration": {
+    "unique_count": 5,
+    "top": "10 - 30mins",
+    "top_count": 220,
+    "unique_preview": "30mins - 1hr, at least 10 mins, 10 - 30mins, 1hr - 1.5hrs, >1.5hrs",
+    "dtype": "object"
+  },
+  "PreRtobaverage": {
+    "unique_count": 5,
+    "top": 1.0,
+    "top_count": 87,
+    "unique_preview": "2.0, 1.0, 3.0, 5.0, 4.0",
+    "dtype": "float64"
+  },
+  "PreRvigorousduration": {
+    "unique_count": 5,
+    "top": "10 - 30mins",
+    "top_count": 123,
+    "unique_preview": "at least 10 mins, 10 - 30mins, 30mins - 1hr, 1hr - 1.5hrs, >1.5hrs",
+    "dtype": "object"
+  },
+  "PreRallastmonthuse": {
+    "unique_count": 5,
+    "top": "every day",
+    "top_count": 29,
+    "unique_preview": "Only on weekends, On special occasions, Once a week, 3-5 times a week, every day",
+    "dtype": "object"
+  },
+  "PreRlastmonthavg": {
+    "unique_count": 4,
+    "top": "less than 1 drink",
+    "top_count": 46,
+    "unique_preview": "1 or 2 drinks, less than 1 drink, 3 or 4 drinks, 5 or 6 drinks",
+    "dtype": "object"
+  },
+  "PreRsleepquality": {
+    "unique_count": 4,
+    "top": "Very good",
+    "top_count": 325,
+    "unique_preview": "Fairly good, Very good, Very bad, Fairly bad",
+    "dtype": "object"
+  },
+  "PreRalthreemonthsuse": {
+    "unique_count": 4,
+    "top": "at least once a week",
+    "top_count": 33,
+    "unique_preview": "once in 3 months, every day, at least once a month, at least once a week",
+    "dtype": "object"
+  },
+  "PreRdrinktype": {
+    "unique_count": 4,
+    "top": "lEnglish/ Hard Drink",
+    "top_count": 40,
+    "unique_preview": "Beer, lEnglish/ Hard Drink, Desi/ Local, Wine",
+    "dtype": "object"
+  },
+  "PreRsweet": {
+    "unique_count": 3,
+    "top": "Rarely/ Never",
+    "top_count": 416,
+    "unique_preview": "Rarely/ Never, Sometimes, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRpopcorn": {
+    "unique_count": 3,
+    "top": "Rarely/ Never",
+    "top_count": 373,
+    "unique_preview": "Sometimes, Rarely/ Never, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRdrink": {
+    "unique_count": 3,
+    "top": "Rarely/ Never",
+    "top_count": 440,
+    "unique_preview": "Usually/Often, Sometimes, Rarely/ Never",
+    "dtype": "object"
+  },
+  "PreRmilk": {
+    "unique_count": 3,
+    "top": "Sometimes",
+    "top_count": 354,
+    "unique_preview": "Rarely/ Never, Sometimes, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRlessfiber": {
+    "unique_count": 3,
+    "top": "Sometimes",
+    "top_count": 379,
+    "unique_preview": "Rarely/ Never, Sometimes, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRskipbreakfast": {
+    "unique_count": 3,
+    "top": "Usually/Often",
+    "top_count": 351,
+    "unique_preview": "Usually/Often, Sometimes, Rarely/ Never",
+    "dtype": "object"
+  },
+  "PreRmeat": {
+    "unique_count": 3,
+    "top": "Sometimes",
+    "top_count": 378,
+    "unique_preview": "Sometimes, Rarely/ Never, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRlessfruit": {
+    "unique_count": 3,
+    "top": "Sometimes",
+    "top_count": 438,
+    "unique_preview": "Rarely/ Never, Sometimes, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRgender": {
+    "unique_count": 3,
+    "top": "Male",
+    "top_count": 469,
+    "unique_preview": "Male, Female, Transgender",
+    "dtype": "object"
+  },
+  "PreRmaritalstatus": {
+    "unique_count": 3,
+    "top": "married",
+    "top_count": 850,
+    "unique_preview": "married, Missing, Other",
+    "dtype": "object"
+  },
+  "PreRfriedfood": {
+    "unique_count": 3,
+    "top": "Sometimes",
+    "top_count": 421,
+    "unique_preview": "Sometimes, Rarely/ Never, Usually/Often",
+    "dtype": "object"
+  },
+  "PreRlessvegetable": {
+    "unique_count": 3,
+    "top": "Usually/Often",
+    "top_count": 403,
+    "unique_preview": "Usually/Often, Sometimes, Rarely/ Never",
+    "dtype": "object"
+  },
+  "PreRdiafather": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 673,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRcurrentworking": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 467,
+    "unique_preview": "1, 0",
+    "dtype": "int64"
+  },
+  "PostRgroupname": {
+    "unique_count": 2,
+    "top": 1,
+    "top_count": 551,
+    "unique_preview": "2, 1",
+    "dtype": "int64"
+  },
+  "PreRarea": {
+    "unique_count": 2,
+    "top": "Urban",
+    "top_count": 568,
+    "unique_preview": "Urban, Rural",
+    "dtype": "object"
+  },
+  "PreRtobuse": {
+    "unique_count": 2,
+    "top": 0.0,
+    "top_count": 796,
+    "unique_preview": "0.0, 1.0",
+    "dtype": "float64"
+  },
+  "PreRdiasister": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 754,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRdiabrother": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 718,
+    "unique_preview": "1, 0",
+    "dtype": "int64"
+  },
+  "PreRdiamother": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 671,
+    "unique_preview": "1, 0",
+    "dtype": "int64"
+  },
+  "PreRstocurrent": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 774,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PhysicalActivity_Optimal": {
+    "unique_count": 2,
+    "top": "No",
+    "top_count": 485,
+    "unique_preview": "Yes, No",
+    "dtype": "object"
+  },
+  "PreRstouse": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 743,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRtobdailyuse": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 768,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRalthreemonths": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 806,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRtobdaily": {
+    "unique_count": 2,
+    "top": 0.0,
+    "top_count": 825,
+    "unique_preview": "0.0, 1.0",
+    "dtype": "float64"
+  },
+  "PreRallastmonth": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 808,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRstodaily": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 761,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRtobcurrent": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 735,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "PreRalcoholuse": {
+    "unique_count": 2,
+    "top": 0,
+    "top_count": 785,
+    "unique_preview": "0, 1",
+    "dtype": "int64"
+  },
+  "Duration_Status": {
+    "unique_count": 2,
+    "top": "known diabetes",
+    "top_count": 565,
+    "unique_preview": "known diabetes, newly diagnosed",
+    "dtype": "object"
+  },
+  "PreRstodailyuse": {
+    "unique_count": 1,
+    "top": 0.0,
+    "top_count": 186,
+    "unique_preview": "0.0",
+    "dtype": "float64"
+  }
+}
