@@ -5,41 +5,41 @@ import re
 
 
 GENDER_MAP = {
-	"male": "Male",
-	"m": "Male",
-	"ma le": "Male",
-	"female": "Female",
-	"f": "Female",
-	"fe male": "Female",
-	"transgender": "Transgender",
-	"trans": "Transgender",
+    "male": "Male",
+    "m": "Male",
+    "ma le": "Male",
+    "female": "Female",
+    "f": "Female",
+    "fe male": "Female",
+    "transgender": "Transgender",
+    "trans": "Transgender",
 }
 
 AREA_MAP = {
-	"urban": "Urban",
-	"rural": "Rural",
+    "urban": "Urban",
+    "rural": "Rural",
 }
 
 EDUCATION_ORDINAL = {
-	"no formal schooling": 0,
-	"up to primary school": 1,
-	"up to high school": 2,
-	"up to intermediate": 3,
-	"up to university": 4,
-	"university completed or higher": 5,
-	"specify if any": 5,
+    "no formal schooling": 0,
+    "up to primary school": 1,
+    "up to high school": 2,
+    "up to intermediate": 3,
+    "up to university": 4,
+    "university completed or higher": 5,
+    "specify if any": 5,
 }
 
 OCCUPATION_GROUP = {
-	"Homemaker": "Homemaker",
-	"Professional/Executive/Big business": "Professional",
-	"Clerical/medium business": "Clerical",
-	"Self-employed/ skilled": "Self-employed",
-	"Unskilled/ landless laborer": "Unskilled",
-	"Retired": "Retired",
-	"Unemployed(able to work)": "Unemployed",
-	"Unemployed(unable to work)": "Unemployed",
-	"Others(specify if any)": "Other",
+    "Homemaker": "Homemaker",
+    "Professional/Executive/Big business": "Professional",
+    "Clerical/medium business": "Clerical",
+    "Self-employed/ skilled": "Self-employed",
+    "Unskilled/ landless laborer": "Unskilled",
+    "Retired": "Retired",
+    "Unemployed(able to work)": "Unemployed",
+    "Unemployed(unable to work)": "Unemployed",
+    "Others(specify if any)": "Other",
 }
 
 SLEEP_QUALITY_ORDINAL = {
@@ -65,114 +65,114 @@ MILK_CONSUMPTION_ORDINAL = {
 
 
 def _clean_text_series(s: pd.Series) -> pd.Series:
-	"""Coerce to string, strip surrounding whitespace and lower-case.
+    """Coerce to string, strip surrounding whitespace and lower-case.
 
-	Keeps NaN as NaN.
-	"""
-	s = s.copy()
-	# preserve NaN
-	mask_na = s.isna()
-	s = s.astype(str).str.strip()
-	s.loc[mask_na] = pd.NA
-	return s
+    Keeps NaN as NaN.
+    """
+    s = s.copy()
+    # preserve NaN
+    mask_na = s.isna()
+    s = s.astype(str).str.strip()
+    s.loc[mask_na] = pd.NA
+    return s
 
 
 def normalize_gender(s: pd.Series) -> pd.Series:
-	"""Normalize `PreRgender` values.
+    """Normalize `PreRgender` values.
 
-	- trims and lowercase inputs
-	- maps common variants to 'Male','Female','Transgender'
-	- unknown or missing -> 'Missing'
+    - trims and lowercase inputs
+    - maps common variants to 'Male','Female','Transgender'
+    - unknown or missing -> 'Missing'
 
-	Returns a pandas Series of cleaned string categories.
-	"""
-	s2 = _clean_text_series(s).str.lower()
+    Returns a pandas Series of cleaned string categories.
+    """
+    s2 = _clean_text_series(s).str.lower()
 
-	def _map(x: Optional[str]):
-		if pd.isna(x) or x in ("nan", "none", "na", ""):
-			return "Missing"
-		x = x.replace(" ", "") if isinstance(x, str) else x
-		return GENDER_MAP.get(x, "Other")
+    def _map(x: Optional[str]):
+        if pd.isna(x) or x in ("nan", "none", "na", ""):
+            return "Missing"
+        x = x.replace(" ", "") if isinstance(x, str) else x
+        return GENDER_MAP.get(x, "Other")
 
-	return s2.map(_map).astype("category")
+    return s2.map(_map).astype("category")
 
 
 def map_area(s: pd.Series, as_numeric: bool = False) -> pd.Series:
-	"""Normalize `PreRarea`.
+    """Normalize `PreRarea`.
 
-	- maps to canonical 'Urban' or 'Rural'
-	- missing -> 'Missing' (or -1 if as_numeric)
-	- when as_numeric=True returns int: Urban=1, Rural=0, Missing=-1
-	"""
-	s2 = _clean_text_series(s).str.lower()
-	mapped = s2.map(lambda x: AREA_MAP.get(x, None) if pd.notna(x) else None)
-	if as_numeric:
-		return mapped.map({"Urban": 1, "Rural": 0}).fillna(-1).astype(int)
-	return mapped.fillna("Missing").astype("category")
+    - maps to canonical 'Urban' or 'Rural'
+    - missing -> 'Missing' (or -1 if as_numeric)
+    - when as_numeric=True returns int: Urban=1, Rural=0, Missing=-1
+    """
+    s2 = _clean_text_series(s).str.lower()
+    mapped = s2.map(lambda x: AREA_MAP.get(x, None) if pd.notna(x) else None)
+    if as_numeric:
+        return mapped.map({"Urban": 1, "Rural": 0}).fillna(-1).astype(int)
+    return mapped.fillna("Missing").astype("category")
 
 
 def clean_marital_status(s: pd.Series, group_rare: bool = True, rare_threshold: float = 0.01) -> pd.Series:
-	"""Clean `PreRmaritalstatus` text and optionally group rare categories.
+    """Clean `PreRmaritalstatus` text and optionally group rare categories.
 
-	- fixes common typos (e.g., 'Seperated' -> 'Separated')
-	- groups categories whose relative frequency < rare_threshold into 'Other'
-	- missing -> 'Missing'
-	"""
-	s2 = _clean_text_series(s)
-	# basic corrections
-	corrections = {
-		"divorcee/seperated": "Divorcee/Separated",
-		"divorcee/separated": "Divorcee/Separated",
-		"widow/widower": "Widowed",
-	}
-	s3 = s2.str.lower().str.replace(r"\s+", " ", regex=True)
-	s3 = s3.map(lambda x: corrections.get(x, x) if pd.notna(x) else x)
-	s3 = s3.fillna("Missing")
+    - fixes common typos (e.g., 'Seperated' -> 'Separated')
+    - groups categories whose relative frequency < rare_threshold into 'Other'
+    - missing -> 'Missing'
+    """
+    s2 = _clean_text_series(s)
+    # basic corrections
+    corrections = {
+        "divorcee/seperated": "Divorcee/Separated",
+        "divorcee/separated": "Divorcee/Separated",
+        "widow/widower": "Widowed",
+    }
+    s3 = s2.str.lower().str.replace(r"\s+", " ", regex=True)
+    s3 = s3.map(lambda x: corrections.get(x, x) if pd.notna(x) else x)
+    s3 = s3.fillna("Missing")
 
-	if group_rare:
-		freqs = s3.value_counts(normalize=True)
-		rare = set(freqs[freqs < rare_threshold].index)
-		s3 = s3.map(lambda x: "Other" if x in rare else x)
+    if group_rare:
+        freqs = s3.value_counts(normalize=True)
+        rare = set(freqs[freqs < rare_threshold].index)
+        s3 = s3.map(lambda x: "Other" if x in rare else x)
 
-	return s3.astype("category")
+    return s3.astype("category")
 
 
 def education_to_ordinal(s: pd.Series, unknown_value: int = -1) -> pd.Series:
-	"""Map `PreReducation` to an ordinal integer scale.
+    """Map `PreReducation` to an ordinal integer scale.
 
-	Uses the mapping in EDUCATION_ORDINAL. Unknown or missing values are set to
-	`unknown_value` (default -1).
-	"""
-	s2 = _clean_text_series(s).str.lower()
-	mapped = s2.map(lambda x: EDUCATION_ORDINAL.get(x, None) if pd.notna(x) else None)
-	return mapped.fillna(unknown_value).astype(int)
+    Uses the mapping in EDUCATION_ORDINAL. Unknown or missing values are set to
+    `unknown_value` (default -1).
+    """
+    s2 = _clean_text_series(s).str.lower()
+    mapped = s2.map(lambda x: EDUCATION_ORDINAL.get(x, None) if pd.notna(x) else None)
+    return mapped.fillna(unknown_value).astype(int)
 
 
 def group_occupation(s: pd.Series) -> pd.Series:
-	"""Group `PreRpresentoccupation` into broader buckets.
+    """Group `PreRpresentoccupation` into broader buckets.
 
-	Returns grouped categorical strings. Unmapped or missing values -> 'Other'/'Missing'.
-	"""
-	s2 = _clean_text_series(s)
-	# use a case-insensitive map
-	inv_map = {k.lower(): v for k, v in OCCUPATION_GROUP.items()}
-	def _map(x: Optional[str]):
-		if pd.isna(x):
-			return "Missing"
-		return inv_map.get(x.lower(), "Other")
+    Returns grouped categorical strings. Unmapped or missing values -> 'Other'/'Missing'.
+    """
+    s2 = _clean_text_series(s)
+    # use a case-insensitive map
+    inv_map = {k.lower(): v for k, v in OCCUPATION_GROUP.items()}
+    def _map(x: Optional[str]):
+        if pd.isna(x):
+            return "Missing"
+        return inv_map.get(x.lower(), "Other")
 
-	return s2.map(_map).astype("category")
+    return s2.map(_map).astype("category")
 
 
 def sleepquality_to_ordinal(s: pd.Series, unknown_value: int = -1) -> pd.Series:
-	"""Map `PreRsleepquality` to an ordinal integer scale.
+    """Map `PreRsleepquality` to an ordinal integer scale.
 
-	Uses the mapping in SLEEP_QUALITY_ORDINAL. Unknown or missing values are set to
-	`unknown_value` (default -1).
-	"""
-	s2 = _clean_text_series(s).str.lower()
-	mapped = s2.map(lambda x: SLEEP_QUALITY_ORDINAL.get(x, None) if pd.notna(x) else None)
-	return mapped.fillna(unknown_value).astype(int)
+    Uses the mapping in SLEEP_QUALITY_ORDINAL. Unknown or missing values are set to
+    `unknown_value` (default -1).
+    """
+    s2 = _clean_text_series(s).str.lower()
+    mapped = s2.map(lambda x: SLEEP_QUALITY_ORDINAL.get(x, None) if pd.notna(x) else None)
+    return mapped.fillna(unknown_value).astype(int)
 
 
 def map_activity_duration_to_minutes(s: pd.Series, unknown_value: int = -1) -> pd.Series:
@@ -266,32 +266,32 @@ def calculate_waist_hip_ratio(waist_cm: pd.Series, hip_cm: pd.Series) -> pd.Seri
 
 
 def yesno_to_binary(s: pd.Series) -> pd.Series:
-	"""Convert common Yes/No (and variants) to nullable Int64 1/0.
+    """Convert common Yes/No (and variants) to nullable Int64 1/0.
 
-	Recognizes variants like: 'Yes', 'No', '1', '0', 'Yes(1)', 'No(0)', 'Y', 'N'.
-	Unknown/missing values are returned as <NA> using pandas nullable Int64 dtype.
-	"""
-	s2 = _clean_text_series(s)
+    Recognizes variants like: 'Yes', 'No', '1', '0', 'Yes(1)', 'No(0)', 'Y', 'N'.
+    Unknown/missing values are returned as <NA> using pandas nullable Int64 dtype.
+    """
+    s2 = _clean_text_series(s)
 
-	def _map(x: Optional[str]):
-		if pd.isna(x) or str(x).lower() in ("nan", "none", "na", ""):
-			return pd.NA
-		# remove surrounding whitespace and common punctuation from lowercased string
-		x_clean = re.sub(r"[^a-z0-9]", "", str(x).lower())
-		# explicit digit
-		if x_clean == "1":
-			return 1
-		if x_clean == "0":
-			return 0
-		if x_clean.startswith("yes") or x_clean == "y" or x_clean.endswith("1"):
-			return 1
-		if x_clean.startswith("no") or x_clean == "n" or x_clean.endswith("0"):
-			return 0
-		return pd.NA
+    def _map(x: Optional[str]):
+        if pd.isna(x) or str(x).lower() in ("nan", "none", "na", ""):
+            return pd.NA
+        # remove surrounding whitespace and common punctuation from lowercased string
+        x_clean = re.sub(r"[^a-z0-9]", "", str(x).lower())
+        # explicit digit
+        if x_clean == "1":
+            return 1
+        if x_clean == "0":
+            return 0
+        if x_clean.startswith("yes") or x_clean == "y" or x_clean.endswith("1"):
+            return 1
+        if x_clean.startswith("no") or x_clean == "n" or x_clean.endswith("0"):
+            return 0
+        return pd.NA
 
-	mapped = s2.map(_map)
-	# return pandas nullable integer dtype so NA is preserved
-	return mapped.astype("Int64")
+    mapped = s2.map(_map)
+    # return pandas nullable integer dtype so NA is preserved
+    return mapped.astype("Int64")
 
 
 def create_current_smoking(df: pd.DataFrame) -> pd.Series:
@@ -441,25 +441,9 @@ def calculate_met_score(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_pre_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Convenience function to run all cleaners on a DataFrame.
-
-    If a column is not present it is skipped. Returns a copy of the DataFrame
-    with cleaned columns added/replaced:
-      - PreRgender -> cleaned categorical
-      - PreRarea -> cleaned categorical
-      - PreRmaritalstatus -> cleaned categorical
-      - PreReducation -> new integer column 'PreReducation_ord'
-      - PreRpresentoccupation -> cleaned grouped categorical 'PreRpresentoccupation_grp'
-      - PreRsleepquality -> new integer column 'PreRsleepquality_ord'
-      - Activity duration columns -> new '_mins' columns with average minutes
-      - Dietary habits -> new '_ord' columns with ordinal scores (0=very bad, 1=bad, 2=good)
-      - PreRBMI -> calculated from height and weight
-      - PreWaisttoHipRatio -> calculated from waist and hip measurements
-      - Physical activity -> 'Physical activity_total_METSCORE_value' and 'PhysicalActivity_Optimal'
-      - current_smoking -> derived binary indicator from tobacco/smoking columns
-      - current_alcohol -> derived binary indicator from alcohol consumption columns
-    """
+    """Convenience function to run all cleaners on a DataFrame with diabetic duration logic."""
     df = df.copy()
+    
     if "PreRgender" in df.columns:
         df["PreRgender"] = normalize_gender(df["PreRgender"])
     if "PreRarea" in df.columns:
@@ -494,10 +478,55 @@ def clean_pre_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Calculate BMI from height and weight
     if "PreRheight" in df.columns and "PreRweight" in df.columns:
         df["PreRBMI"] = calculate_bmi(df["PreRheight"], df["PreRweight"])
-    
+
     # Calculate waist-to-hip ratio
     if "PreRwaist" in df.columns and "PreRhip" in df.columns:
         df["PreWaisttoHipRatio"] = calculate_waist_hip_ratio(df["PreRwaist"], df["PreRhip"])
+
+    # Add systolic for Pre (for nmbfinaldiabetes and nmbfinalnewdiabetes)
+    if "PreRsystolicfirst" in df.columns and "PreRsystolicsecond" in df.columns:
+        df["systolic"] = df[["PreRsystolicfirst", "PreRsystolicsecond"]].max(axis=1)
+
+    # Add systolic for Post (for prepostfinal)
+    elif "PostRsystolicfirst" in df.columns and "PostRsystolicsecond" in df.columns:
+        df["systolic"] = df[["PostRsystolicfirst", "PostRsystolicsecond"]].max(axis=1)
+
+    # Add diastolic for Pre (for nmbfinaldiabetes and nmbfinalnewdiabetes)   
+    if "PreRdiastolicfirst" in df.columns and "PreRdiastolicsecond" in df.columns:
+        df["diastolic"] = df[["PreRdiastolicfirst", "PreRdiastolicsecond"]].max(axis=1)
+
+    # Add diastolic for Post (for prepostfinal)   
+    elif "PostRdiastolicfirst" in df.columns and "PostRdiastolicsecond" in df.columns:
+        df["diastolic"] = df[["PostRdiastolicfirst", "PostRdiastolicsecond"]].max(axis=1)
+    
+    # ===== DIABETIC DURATION CALCULATION - FIXED =====
+    # Initialize default values for all files
+    df["Diabetic_Duration(years)"] = 0
+    df["Duration_Status"] = "newly diagnosed"
+    
+    # Check what columns we have and apply appropriate logic
+    if "PreBLAge" in df.columns and "PreRdiaage" in df.columns:
+        # nmbfinaldiabetes type: PreBLAge - PreRdiaage
+        duration = df["PreBLAge"] - df["PreRdiaage"]
+        valid_mask = (df["PreBLAge"].notna() & df["PreRdiaage"].notna() & 
+                      (duration >= 0) & (duration <= 80))
+        df.loc[valid_mask, "Diabetic_Duration(years)"] = duration[valid_mask]
+        df["postblage"] = df["PreBLAge"]  # Create for consistency
+        
+    elif "PostBLAge" in df.columns and "PostRdiaage" in df.columns:
+        # prepostfinal type: PostBLAge - PostRdiaage  
+        duration = df["PostBLAge"] - df["PostRdiaage"]
+        valid_mask = (df["PostBLAge"].notna() & df["PostRdiaage"].notna() & 
+                      (duration >= 0) & (duration <= 80))
+        df.loc[valid_mask, "Diabetic_Duration(years)"] = duration[valid_mask]
+        df["postblage"] = df["PostBLAge"]  # Create for consistency
+        
+    # If neither condition met, keep default values (duration=0, newly diagnosed)
+    
+    # Create Duration_Status based on calculated duration
+    df["Duration_Status"] = "newly diagnosed"
+    df.loc[df["Diabetic_Duration(years)"] > 0.6, "Duration_Status"] = "known diabetes"
+    # ===== END DIABETIC DURATION CALCULATION =====
 
     # Convert family diabetes indicators from Yes/No to 1/0 (nullable int)
     for col in ("PreRdiafather", "PreRdiamother", "PreRdiabrother", "PreRdiasister", "PreRcurrentworking"):
@@ -528,72 +557,73 @@ def clean_pre_columns(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
+
 def process_csv_files(paths, output_dir: str = None, columns_to_keep: list = None, suffix: str = "_selected_columns_cleaned", overwrite: bool = False):
-		"""Process one or more CSV files: read -> clean -> save.
+    """Process one or more CSV files: read -> clean -> save.
 
-		Arguments:
-			paths: str or list[str] - path or list of paths to input CSV files.
-			output_dir: optional directory to write outputs; if None outputs are written
-				next to each input file.
-			columns_to_keep: optional list of column names to select before saving. If
-				None, all columns from the cleaned DataFrame are saved.
-			suffix: filename suffix inserted before the extension for output files.
-			overwrite: if True will overwrite existing output files.
+    Arguments:
+        paths: str or list[str] - path or list of paths to input CSV files.
+        output_dir: optional directory to write outputs; if None outputs are written
+            next to each input file.
+        columns_to_keep: optional list of column names to select before saving. If
+            None, all columns from the cleaned DataFrame are saved.
+        suffix: filename suffix inserted before the extension for output files.
+        overwrite: if True will overwrite existing output files.
 
-		Returns:
-			list of output file paths written.
+    Returns:
+        list of output file paths written.
 
-		Usage (from Python):
-			from data_prep import process_csv_files
-			process_csv_files(r"D:\path\to\file.csv")
-			process_csv_files(["a.csv","b.csv"], output_dir="D:\cleaned")
-		"""
-		# normalize input to a list
-		if isinstance(paths, (str,)):
-				paths = [paths]
+    Usage (from Python):
+        from data_prep import process_csv_files
+        process_csv_files(r"D:\path\to\file.csv")
+        process_csv_files(["a.csv","b.csv"], output_dir="D:\cleaned")
+    """
+    # normalize input to a list
+    if isinstance(paths, (str,)):
+        paths = [paths]
 
-		if not isinstance(paths, (list, tuple)):
-				raise TypeError("paths must be a path string or a list/tuple of paths")
+    if not isinstance(paths, (list, tuple)):
+        raise TypeError("paths must be a path string or a list/tuple of paths")
 
-		out_paths = []
-		for p in paths:
-				try:
-						df = pd.read_csv(p)
-				except Exception as e:
-						print(f"Skipped '{p}': could not read CSV ({e})")
-						continue
+    out_paths = []
+    for p in paths:
+        try:
+            df = pd.read_csv(p)
+        except Exception as e:
+            print(f"Skipped '{p}': could not read CSV ({e})")
+            continue
 
-				# run cleaning
-				df_clean = clean_pre_columns(df)
+        # run cleaning
+        df_clean = clean_pre_columns(df)
 
-				# select columns if requested
-				if columns_to_keep:
-						existing = [c for c in columns_to_keep if c in df_clean.columns]
-						if not existing:
-								print(f"Warning: none of requested columns were found in '{p}'; saving full cleaned frame instead.")
-						else:
-								df_clean = df_clean[existing]
+        # select columns if requested
+        if columns_to_keep:
+            existing = [c for c in columns_to_keep if c in df_clean.columns]
+            if not existing:
+                print(f"Warning: none of requested columns were found in '{p}'; saving full cleaned frame instead.")
+            else:
+                df_clean = df_clean[existing]
 
-				# build output path
-				base_name = os.path.splitext(os.path.basename(p))[0]
-				out_dir = output_dir if output_dir else os.path.dirname(p)
-				os.makedirs(out_dir, exist_ok=True)
-				out_name = f"{base_name}{suffix}.csv"
-				out_path = os.path.join(out_dir, out_name)
+        # build output path
+        base_name = os.path.splitext(os.path.basename(p))[0]
+        out_dir = output_dir if output_dir else os.path.join(os.path.dirname(__file__), "prepared data")
+        os.makedirs(out_dir, exist_ok=True)
+        out_name = f"{base_name}{suffix}.csv"
+        out_path = os.path.join(out_dir, out_name)
 
-				if os.path.exists(out_path) and not overwrite:
-						print(f"Skipped writing '{out_path}' (exists). Pass overwrite=True to replace.")
-						out_paths.append(out_path)
-						continue
+        if os.path.exists(out_path) and not overwrite:
+            print(f"Skipped writing '{out_path}' (exists). Pass overwrite=True to replace.")
+            out_paths.append(out_path)
+            continue
 
-				try:
-						df_clean.to_csv(out_path, index=False)
-						out_paths.append(out_path)
-						print(f"Wrote cleaned CSV: {out_path}")
-				except Exception as e:
-						print(f"Failed to write '{out_path}': {e}")
+        try:
+            df_clean.to_csv(out_path, index=False)
+            out_paths.append(out_path)
+            print(f"Wrote cleaned CSV: {out_path}")
+        except Exception as e:
+            print(f"Failed to write '{out_path}': {e}")
 
-		return out_paths
+    return out_paths
 
 
 # Example (non-CLI) usage — call `process_csv_files` from your training or ETL script:

@@ -188,9 +188,9 @@ def process_files(input_files: list, output_dir: str = None, save_value_counts: 
 if __name__ == '__main__':
     # process multiple input files (as requested)
     input_files = [
-        r'D:\poornima sukumar mam files\raw data\PrePostFinal (3)_processed.csv',
-        r'D:\poornima sukumar mam files\raw data\nmbfinalnewDiabetes (3)_processed.csv',
-        r'D:\poornima sukumar mam files\raw data\nmbfinalDiabetes (4)_processed.csv',
+        r'C:\Users\maadh\OneDrive\Desktop\PhobosQ\poornima-ML\raw data\nmbfinalDiabetes (4)_selected_columns_cleaned_processed.csv',
+        r'C:\Users\maadh\OneDrive\Desktop\PhobosQ\poornima-ML\raw data\nmbfinalnewDiabetes (3)_selected_columns_cleaned_processed.csv',
+        r'C:\Users\maadh\OneDrive\Desktop\PhobosQ\poornima-ML\raw data\PrePostFinal (3)_selected_columns_cleaned_processed.csv',
     ]
 
     results = process_files(input_files, output_dir=None, save_value_counts=False)
