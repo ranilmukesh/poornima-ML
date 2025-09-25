@@ -77,16 +77,14 @@ def _clean_text_series(s: pd.Series) -> pd.Series:
     return s
 
 
-def normalize_gender(s: pd.Series, as_numeric: bool = False) -> pd.Series:
+def normalize_gender(s: pd.Series) -> pd.Series:
     """Normalize `PreRgender` values.
 
     - trims and lowercase inputs
     - maps common variants to 'Male','Female','Transgender'
     - unknown or missing -> 'Missing'
 
-    When as_numeric=True, returns int: Male=1, Female=0, Other/Missing/Transgender=-1
-
-    Returns a pandas Series of cleaned string categories or int.
+    Returns a pandas Series of cleaned string categories.
     """
     s2 = _clean_text_series(s).str.lower()
 
@@ -96,11 +94,7 @@ def normalize_gender(s: pd.Series, as_numeric: bool = False) -> pd.Series:
         x = x.replace(" ", "") if isinstance(x, str) else x
         return GENDER_MAP.get(x, "Other")
 
-    mapped = s2.map(_map).astype("category")
-    
-    if as_numeric:
-        return mapped.map({"Male": 1, "Female": 0}).fillna(-1).astype(int)
-    return mapped
+    return s2.map(_map).astype("category")
 
 
 def map_area(s: pd.Series, as_numeric: bool = False) -> pd.Series:
@@ -451,7 +445,7 @@ def clean_pre_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     
     if "PreRgender" in df.columns:
-        df["PreRgender"] = normalize_gender(df["PreRgender"], as_numeric=True)
+        df["PreRgender"] = normalize_gender(df["PreRgender"])
     if "PreRarea" in df.columns:
         df["PreRarea"] = map_area(df["PreRarea"], as_numeric=False)
     if "PreRmaritalstatus" in df.columns:
