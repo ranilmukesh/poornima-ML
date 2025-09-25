@@ -2,6 +2,11 @@ from typing import Optional
 import os
 import pandas as pd
 import re
+from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
+from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import KNNImputer
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+import numpy as np
 
 
 GENDER_MAP = {
@@ -558,8 +563,227 @@ def clean_pre_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def process_csv_files(paths, output_dir: str = None, columns_to_keep: list = None, suffix: str = "_selected_columns_cleaned", overwrite: bool = False):
-    """Process one or more CSV files: read -> clean -> save.
+def select_important_features(df: pd.DataFrame, target_columns: list, top_percent: float = 0.5) -> list:
+    """Select top percentage of most important features for predicting target columns.
+
+    Uses mutual information and random forest feature importance to rank features.
+    Returns list of top feature column names.
+    """
+    # Prepare data for feature selection
+    df_copy = df.copy()
+
+    # Convert categorical columns to numeric for feature selection
+    categorical_cols = df_copy.select_dtypes(include=['object', 'category']).columns
+    label_encoders = {}
+
+    for col in categorical_cols:
+        if col not in target_columns:  # Don't encode target columns yet
+            le = LabelEncoder()
+            df_copy[col] = le.fit_transform(df_copy[col].astype(str))
+            label_encoders[col] = le
+
+    # Fill NaN values temporarily for feature selection
+    df_copy = df_copy.fillna(df_copy.median(numeric_only=True))
+
+    # Get all columns except targets
+    feature_cols = [col for col in df_copy.columns if col not in target_columns]
+
+    if not feature_cols:
+        return []
+
+    # Calculate feature importance using multiple methods
+    importance_scores = {}
+
+    for target in target_columns:
+        if target not in df_copy.columns:
+            continue
+
+        y = df_copy[target]
+
+        # Skip if target has too few unique values or is mostly NaN
+        if y.nunique() < 2 or y.isna().sum() > len(y) * 0.8:
+            continue
+
+        # Use mutual information for continuous/categorical targets
+        if y.dtype in ['float64', 'int64']:
+            try:
+                mi_scores = mutual_info_regression(df_copy[feature_cols], y)
+            except:
+                mi_scores = np.zeros(len(feature_cols))
+        else:
+            try:
+                # Convert target to numeric for MI calculation
+                y_encoded = LabelEncoder().fit_transform(y.astype(str))
+                mi_scores = mutual_info_classif(df_copy[feature_cols], y_encoded)
+            except:
+                mi_scores = np.zeros(len(feature_cols))
+
+        # Use Random Forest importance
+        rf_scores = np.zeros(len(feature_cols))
+        try:
+            if y.dtype in ['float64', 'int64']:
+                rf = RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1)
+            else:
+                y_encoded = LabelEncoder().fit_transform(y.astype(str))
+                rf = RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
+
+            rf.fit(df_copy[feature_cols], y if y.dtype in ['float64', 'int64'] else y_encoded)
+            rf_scores = rf.feature_importances_
+        except:
+            pass
+
+        # Combine scores
+        combined_scores = (mi_scores + rf_scores) / 2
+
+        for i, col in enumerate(feature_cols):
+            if col not in importance_scores:
+                importance_scores[col] = []
+            importance_scores[col].append(combined_scores[i])
+
+    # Average importance across all targets
+    avg_importance = {}
+    for col in feature_cols:
+        if col in importance_scores and importance_scores[col]:
+            avg_importance[col] = np.mean(importance_scores[col])
+        else:
+            avg_importance[col] = 0
+
+    # Sort by importance and select top percentage
+    sorted_features = sorted(avg_importance.items(), key=lambda x: x[1], reverse=True)
+    top_n = max(1, int(len(sorted_features) * top_percent))
+
+    return [col for col, score in sorted_features[:top_n]]
+
+
+def enrich_columns_with_features(df: pd.DataFrame, target_columns: list, important_features: list) -> pd.DataFrame:
+    """Enrich target columns by imputing missing values using important features.
+
+    Uses KNN imputation with the important features to predict missing values in target columns.
+    """
+    df_enriched = df.copy()
+
+    # Prepare features for imputation
+    feature_cols = [col for col in important_features if col in df_enriched.columns]
+
+    if not feature_cols:
+        return df_enriched
+
+    # Create feature matrix
+    X = df_enriched[feature_cols].copy()
+
+    # Handle categorical features
+    categorical_features = X.select_dtypes(include=['object', 'category']).columns
+    label_encoders = {}
+
+    for col in categorical_features:
+        le = LabelEncoder()
+        X[col] = le.fit_transform(X[col].astype(str))
+        label_encoders[col] = le
+
+    # Fill missing values in features first
+    X = X.fillna(X.median(numeric_only=True))
+
+    # Impute each target column
+    for target_col in target_columns:
+        if target_col not in df_enriched.columns:
+            continue
+
+        y = df_enriched[target_col].copy()
+
+        # Skip if no missing values
+        if y.isna().sum() == 0:
+            continue
+
+        # Prepare target for imputation
+        if y.dtype in ['object', 'category']:
+            # For categorical targets, use classification approach
+            y_encoded = LabelEncoder().fit_transform(y.astype(str))
+            y_filled = y_encoded.copy().astype(float)
+
+            # Mark missing values
+            missing_mask = df_enriched[target_col].isna()
+            y_filled[missing_mask] = np.nan
+
+            # Use KNN to impute
+            if missing_mask.sum() > 0:
+                imputer = KNNImputer(n_neighbors=min(5, len(X)-1))
+                X_with_target = X.copy()
+                X_with_target['target'] = y_filled
+
+                imputed = imputer.fit_transform(X_with_target)
+                imputed_target = imputed[:, -1]
+
+                # Round to nearest integer for categorical
+                imputed_target = np.round(imputed_target).astype(int)
+
+                # Decode back to original categories
+                le_target = LabelEncoder()
+                non_missing_y = y.dropna()
+                le_target.fit(non_missing_y)
+
+                # Handle out-of-bounds predictions
+                unique_labels = le_target.classes_
+                imputed_target = np.clip(imputed_target, 0, len(unique_labels)-1)
+
+                df_enriched.loc[missing_mask, target_col] = le_target.inverse_transform(imputed_target[missing_mask])
+
+        else:
+            # For numeric targets, use regression approach
+            y_filled = y.copy().astype(float)
+
+            if y_filled.isna().sum() > 0:
+                imputer = KNNImputer(n_neighbors=min(5, len(X)-1))
+                X_with_target = X.copy()
+                X_with_target['target'] = y_filled
+
+                imputed = imputer.fit_transform(X_with_target)
+                df_enriched[target_col] = imputed[:, -1]
+
+    return df_enriched
+
+
+def encode_categorical_columns(df: pd.DataFrame, file_basename: str) -> pd.DataFrame:
+    """Encode categorical columns to numeric values based on file-specific mappings."""
+
+    df_encoded = df.copy()
+
+    # Gender encoding mappings
+    gender_mappings = {
+        "nmbfinalDiabetes (4)": {"Male": 1, "Female": 0, "Transgender": 2, "Other": pd.NA, "Missing": pd.NA},
+        "nmbfinalnewDiabetes (3)": {"Male": 1, "Female": 0, "Transgender": pd.NA, "Other": pd.NA, "Missing": pd.NA},
+        "PrePostFinal (3)": {"Male": 1, "Female": 0, "Transgender": pd.NA, "Other": pd.NA, "Missing": pd.NA}
+    }
+
+    # Area encoding mappings
+    area_mappings = {
+        "nmbfinalDiabetes (4)": {"Urban": 1, "Rural": 0, "Missing": pd.NA},
+        "nmbfinalnewDiabetes (3)": {"Urban": 1, "Rural": 0, "Missing": pd.NA},
+        "PrePostFinal (3)": {"Urban": 1, "Rural": 0, "Missing": pd.NA}
+    }
+
+    # Determine which mapping to use based on filename
+    mapping_key = None
+    for key in gender_mappings.keys():
+        if key in file_basename:
+            mapping_key = key
+            break
+
+    if mapping_key:
+        # Encode PreRgender
+        if "PreRgender" in df_encoded.columns:
+            df_encoded["PreRgender"] = df_encoded["PreRgender"].map(gender_mappings[mapping_key]).astype("Int64")
+
+        # Encode PreRarea
+        if "PreRarea" in df_encoded.columns:
+            df_encoded["PreRarea"] = df_encoded["PreRarea"].map(area_mappings[mapping_key]).astype("Int64")
+
+    return df_encoded
+
+
+def process_csv_files_enriched(paths, output_dir: str = None, columns_to_keep: list = None,
+                              suffix: str = "_selected_columns_cleaned", overwrite: bool = False,
+                              enrich_with_features: bool = True, top_feature_percent: float = 0.5):
+    """Process one or more CSV files: read -> clean -> save, with optional enrichment.
 
     Arguments:
         paths: str or list[str] - path or list of paths to input CSV files.
@@ -569,14 +793,17 @@ def process_csv_files(paths, output_dir: str = None, columns_to_keep: list = Non
             None, all columns from the cleaned DataFrame are saved.
         suffix: filename suffix inserted before the extension for output files.
         overwrite: if True will overwrite existing output files.
+        enrich_with_features: if True, enrich target columns by imputing missing values
+            using important features.
+        top_feature_percent: percentage of top features to select for enrichment (default 50%).
 
     Returns:
         list of output file paths written.
 
     Usage (from Python):
-        from data_prep import process_csv_files
-        process_csv_files(r"D:\path\to\file.csv")
-        process_csv_files(["a.csv","b.csv"], output_dir="D:\cleaned")
+        from data_prep import process_csv_files_enriched
+        process_csv_files_enriched(r"D:\path\to\file.csv")
+        process_csv_files_enriched(["a.csv","b.csv"], output_dir="D:\cleaned")
     """
     # normalize input to a list
     if isinstance(paths, (str,)):
@@ -595,6 +822,18 @@ def process_csv_files(paths, output_dir: str = None, columns_to_keep: list = Non
 
         # run cleaning
         df_clean = clean_pre_columns(df)
+
+        # Feature selection and enrichment
+        if enrich_with_features:
+            # Select important features for the target columns
+            target_columns = ["Diabetic_Duration(years)", "systolic", "diastolic", "current_smoking", "current_alcohol"]
+            important_features = select_important_features(df_clean, target_columns, top_percent=top_feature_percent)
+
+            # Enrich target columns by imputing missing values using important features
+            df_clean = enrich_columns_with_features(df_clean, target_columns, important_features)
+
+        # Encode categorical columns to numeric values based on file-specific mappings
+        df_clean = encode_categorical_columns(df_clean, os.path.basename(p))
 
         # select columns if requested
         if columns_to_keep:
@@ -626,6 +865,6 @@ def process_csv_files(paths, output_dir: str = None, columns_to_keep: list = Non
     return out_paths
 
 
-# Example (non-CLI) usage — call `process_csv_files` from your training or ETL script:
-# from data_prep import process_csv_files
-# process_csv_files([r'D:\poornima sukumar mam files\PrePostFinal (3).csv'], columns_to_keep=[...])
+# Example (non-CLI) usage — call `process_csv_files_enriched` from your training or ETL script:
+# from data_prep import process_csv_files_enriched
+# process_csv_files_enriched([r'D:\poornima sukumar mam files\PrePostFinal (3).csv'], columns_to_keep=[...])
