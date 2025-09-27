@@ -141,3 +141,8 @@ Thumbs.db
 # *.h5
 # models/
 # checkpoints/
+
+# Project specific temporary files
+temp_processed/
+cleaned data/
+backup/

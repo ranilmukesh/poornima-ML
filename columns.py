@@ -9,8 +9,8 @@ input_files = [
     r"raw data\PrePostFinal (3).csv",
 ]
 
-# Output directory (absolute path)
-output_dir = r"C:\Users\maadh\OneDrive\Desktop\PhobosQ\poornima-ML\cleaned data"
+# Output directory (absolute path) - temporary processing folder
+output_dir = r"C:\Users\maadh\OneDrive\Desktop\PhobosQ\poornima-ML\temp_processed"
 
 # Create output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
