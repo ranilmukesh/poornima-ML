@@ -1,18 +1,7 @@
-"""
-Final Imputation Solution for Diabetes Dataset
-==============================================
+"""Optimal Imputation Pipeline for Diabetes Datasets
 
-Based on comprehensive evaluation:
-- KNN works best for categorical variables (24.9% and 17.9% improvement over mode)
-- For numerical variables, different methods work better depending on data characteristics
-- This script applies optimal imputation for columns specified in columns.py
-
-Priority columns for imputation (most critical for ML):
-1. PostBLHBA1C - Primary outcome measure
-2. PreBLAge - Key demographic
-3. PreRgender, PreRarea - Important categorical features
-4. PreBLFBS - Clinical measurement
-5. Other clinical measurements as needed
+Applies KNN imputation for categorical variables and context-aware
+imputation strategies for numerical variables based on missing data patterns.
 """
 
 import pandas as pd
@@ -27,12 +16,7 @@ from sklearn.metrics import mean_squared_error
 warnings.filterwarnings('ignore')
 
 class OptimalImputer:
-    """
-    Optimal imputation strategy based on evaluation results:
-    - KNN for categorical variables (PreRgender, PreRarea)
-    - KNN for numerical variables with moderate missing rates
-    - Mean/Mode for variables with very high missing rates (>80%)
-    """
+    """Optimal imputation strategy using KNN and Simple imputation methods."""
     
     def __init__(self):
         self.imputers = {}
@@ -40,7 +24,7 @@ class OptimalImputer:
         self.strategies = {}
         
     def analyze_column(self, series):
-        """Determine optimal imputation strategy for a column"""
+        """Determine optimal imputation strategy based on data characteristics."""
         missing_rate = series.isnull().sum() / len(series)
         is_categorical = series.dtype == 'object' or series.nunique() <= 10
         
@@ -57,14 +41,14 @@ class OptimalImputer:
         return strategy, is_categorical, missing_rate
     
     def fit_transform_column(self, df, column):
-        """Apply optimal imputation to a single column"""
+        """Apply optimal imputation to a single column."""
         if column not in df.columns:
             return df
             
         series = df[column].copy()
         strategy, is_categorical, missing_rate = self.analyze_column(series)
         
-        print(f"📊 {column}: {missing_rate:.1%} missing → {strategy.upper()} imputation")
+        print(f"[INFO] {column}: {missing_rate:.1%} missing -> {strategy.upper()} imputation")
         
         # Store strategy for reporting
         self.strategies[column] = {
@@ -144,7 +128,7 @@ class OptimalImputer:
         return df
     
     def process_dataset(self, df, priority_columns=None):
-        """Process entire dataset with optimal imputation"""
+        """Process entire dataset with optimal imputation."""
         result_df = df.copy()
         
         # Define priority order for imputation
@@ -168,12 +152,11 @@ class OptimalImputer:
         return result_df, self.strategies
 
 def process_all_datasets():
-    """Process all datasets with optimal imputation"""
+    """Process all preprocessed datasets with optimal imputation."""
     
-    print("🚀 FINAL IMPUTATION PIPELINE")
+    print("[PROCESSING] FINAL IMPUTATION PIPELINE")
     print("="*60)
     
-    # File paths from columns.py
     input_files = [
         "temp_processed/nmbfinalDiabetes (4)_selected_columns_cleaned_processed.csv",
         "temp_processed/nmbfinalnewDiabetes (3)_selected_columns_cleaned_processed.csv", 
@@ -190,15 +173,15 @@ def process_all_datasets():
             print(f"⚠️ File not found: {input_file}")
             continue
             
-        print(f"\n📁 Processing: {os.path.basename(input_file)}")
+        print(f"\n[INFO] Processing: {os.path.basename(input_file)}")
         print("-" * 50)
         
         # Load dataset
         df = pd.read_csv(input_file)
         original_missing = df.isnull().sum().sum()
         
-        print(f"📊 Original dataset: {len(df)} rows, {len(df.columns)} columns")
-        print(f"📊 Total missing values: {original_missing:,}")
+        print(f"[DATA] Original dataset: {len(df)} rows, {len(df.columns)} columns")
+        print(f"[DATA] Total missing values: {original_missing:,}")
         
         # Apply optimal imputation
         imputer = OptimalImputer()
@@ -206,13 +189,13 @@ def process_all_datasets():
         
         # Check results
         final_missing = imputed_df.isnull().sum().sum()
-        print(f"\n✅ Final missing values: {final_missing:,}")
-        print(f"✅ Completion rate: {((original_missing-final_missing)/original_missing)*100:.1f}%")
+        print(f"\n[SUCCESS] Final missing values: {final_missing:,}")
+        print(f"[SUCCESS] Completion rate: {((original_missing-final_missing)/original_missing)*100:.1f}%")
         
         # Save imputed dataset
         output_file = os.path.join(output_dir, os.path.basename(input_file).replace('.csv', '_final_imputed.csv'))
         imputed_df.to_csv(output_file, index=False)
-        print(f"💾 Saved: {output_file}")
+        print(f"[SAVED] {output_file}")
         
         results[input_file] = {
             'original_missing': original_missing,
@@ -227,24 +210,24 @@ def process_all_datasets():
 def create_imputation_report(results):
     """Create summary report of imputation results"""
     
-    print(f"\n\n📋 FINAL IMPUTATION REPORT")
+    print(f"\n\n[REPORT] FINAL IMPUTATION REPORT")
     print("="*60)
     
     total_original = sum([r['original_missing'] for r in results.values()])
     total_final = sum([r['final_missing'] for r in results.values()])
     overall_completion = ((total_original-total_final)/total_original)*100 if total_original > 0 else 100
     
-    print(f"📊 OVERALL STATISTICS:")
+    print(f"[STATS] OVERALL STATISTICS:")
     print(f"   Total missing values processed: {total_original:,}")
     print(f"   Total remaining missing values: {total_final:,}")
     print(f"   Overall completion rate: {overall_completion:.1f}%")
     
-    print(f"\n📊 PER-DATASET RESULTS:")
+    print(f"\n[STATS] PER-DATASET RESULTS:")
     for file_path, result in results.items():
         filename = os.path.basename(file_path)
         print(f"   {filename}: {result['completion_rate']:.1f}% complete")
     
-    print(f"\n🎯 METHOD USAGE SUMMARY:")
+    print(f"\n[METHOD] METHOD USAGE SUMMARY:")
     all_strategies = {}
     for result in results.values():
         for col, strategy_info in result['strategies'].items():
@@ -256,11 +239,11 @@ def create_imputation_report(results):
     for method, count in sorted(all_strategies.items()):
         print(f"   {method.upper()}: {count} columns")
     
-    print(f"\n💡 IMPUTATION STRATEGY:")
-    print(f"   ✅ KNN for categorical variables (proven 24.9% better than mode)")
-    print(f"   ✅ KNN for numerical variables with sufficient features")
-    print(f"   ✅ Mean/Mode fallback for high-missing columns (>80%)")
-    print(f"   ✅ Context-aware method selection per column")
+    print(f"\n[STRATEGY] IMPUTATION STRATEGY:")
+    print(f"   - KNN for categorical variables (proven 24.9% better than mode)")
+    print(f"   - KNN for numerical variables with sufficient features")
+    print(f"   - Mean/Mode fallback for high-missing columns (>80%)")
+    print(f"   - Context-aware method selection per column")
 
 def main():
     """Main execution function"""
@@ -272,11 +255,11 @@ def main():
         # Generate report
         create_imputation_report(results)
         
-        print(f"\n🎉 IMPUTATION COMPLETED SUCCESSFULLY!")
-        print(f"📁 Check 'final_imputed_data/' folder for results")
+        print(f"\n[SUCCESS] IMPUTATION COMPLETED SUCCESSFULLY!")
+        print(f"[INFO] Check 'final_imputed_data/' folder for results")
         
     except Exception as e:
-        print(f"❌ Error during imputation: {e}")
+        print(f"[ERROR] Error during imputation: {e}")
         import traceback
         traceback.print_exc()
 

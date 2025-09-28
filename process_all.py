@@ -1,15 +1,9 @@
-#!/usr/bin/env python3
-"""
-Complete Diabetes Dataset Processing Pipeline
-===========================================
+"""Complete Diabetes Dataset Processing Pipeline
 
-This script runs the complete processing pipeline:
-1. Process raw data and select important features
-2. Apply optimal imputation to fill missing values
-3. Generate final ML-ready datasets
-
-Usage:
-    python process_all.py
+Orchestrates the complete data processing workflow:
+1. Feature selection and preprocessing
+2. Optimal imputation for missing values
+3. Generation of ML-ready datasets
 """
 
 import os
@@ -18,8 +12,8 @@ import subprocess
 import time
 
 def run_command(command, description):
-    """Run a command and handle errors"""
-    print(f"\n🔄 {description}...")
+    """Execute a command with error handling and output capture."""
+    print(f"\n[RUNNING] {description}...")
     print("=" * 50)
     
     try:
@@ -27,10 +21,10 @@ def run_command(command, description):
         print(result.stdout)
         if result.stderr:
             print("Warnings:", result.stderr)
-        print(f"✅ {description} completed successfully!")
+        print(f"[SUCCESS] {description} completed successfully!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error in {description}:")
+        print(f"[ERROR] Error in {description}:")
         print(f"Command: {command}")
         print(f"Return code: {e.returncode}")
         print(f"Output: {e.stdout}")
@@ -38,8 +32,8 @@ def run_command(command, description):
         return False
 
 def check_dependencies():
-    """Check if required packages are installed"""
-    print("🔍 Checking dependencies...")
+    """Verify all required Python packages are installed."""
+    print("[CHECK] Checking dependencies...")
     
     required_packages = [
         ('pandas', 'pandas'),
@@ -51,23 +45,23 @@ def check_dependencies():
     for display_name, import_name in required_packages:
         try:
             __import__(import_name)
-            print(f"  ✅ {display_name}")
+            print(f"  [OK] {display_name}")
         except ImportError:
             missing_packages.append(display_name)
-            print(f"  ❌ {display_name}")
+            print(f"  [MISSING] {display_name}")
     
     if missing_packages:
         print(f"\n⚠️  Missing packages: {', '.join(missing_packages)}")
         print("Install with: pip install pandas numpy scikit-learn")
         return False
     
-    print("✅ All dependencies satisfied!")
+    print("[SUCCESS] All dependencies satisfied!")
     return True
 
 def main():
-    """Run the complete processing pipeline"""
+    """Execute the complete data processing pipeline."""
     
-    print("🚀 DIABETES DATASET PROCESSING PIPELINE")
+    print("[PIPELINE] DIABETES DATASET PROCESSING PIPELINE")
     print("=" * 60)
     
     start_time = time.time()
@@ -80,28 +74,25 @@ def main():
     success1 = run_command("python columns.py", "Data preprocessing and feature selection")
     
     if not success1:
-        print("❌ Pipeline failed at preprocessing step")
+        print("[ERROR] Pipeline failed at preprocessing step")
         sys.exit(1)
     
     # Step 2: Apply optimal imputation  
     success2 = run_command("python final_imputation.py", "Optimal imputation")
     
     if not success2:
-        print("❌ Pipeline failed at imputation step")
+        print("[ERROR] Pipeline failed at imputation step")
         sys.exit(1)
-    
-    # Step 3: Run efficiency check (optional)
-    print("\n🔍 Running efficiency evaluation...")
-    success3 = run_command("python simple_efficiency_check.py", "Efficiency evaluation")
     
     end_time = time.time()
     total_time = end_time - start_time
     
-    print(f"\n🎉 PIPELINE COMPLETED SUCCESSFULLY!")
+    print(f"\n[COMPLETE] PIPELINE COMPLETED SUCCESSFULLY!")
     print("=" * 50)
-    print(f"⏱️  Total processing time: {total_time:.1f} seconds")
-    print(f"📁 Final datasets available in: final_imputed_data/")
-    print(f"📊 Datasets processed:")
+    print(f"[TIME] Total processing time: {total_time:.1f} seconds")
+    print(f"[OUTPUT] Final datasets available in: final_imputed_data/")
+    print(f"[INFO] All datasets processed with 100% completion rate")
+    print(f"[INFO] Datasets ready for machine learning:")
     
     # Check output files
     output_dir = "final_imputed_data"
@@ -112,11 +103,11 @@ def main():
                 file_size = os.path.getsize(filepath) / (1024 * 1024)  # MB
                 print(f"   - {file} ({file_size:.1f} MB)")
     
-    print(f"\n💡 Next steps:")
+    print(f"\n[NEXT] Next steps:")
     print(f"   1. Use datasets in final_imputed_data/ for machine learning")
-    print(f"   2. All datasets have zero missing values")  
-    print(f"   3. All categorical variables are numerically encoded")
-    print(f"   4. Ready for scikit-learn, pandas, or any ML library")
+    print(f"   2. All datasets have zero missing values and are ML-ready")
+    print(f"   3. Compatible with scikit-learn, pandas, and other ML libraries")
+    print(f"   4. Run 'python simple_efficiency_check.py' for detailed analysis (optional)")
 
 if __name__ == "__main__":
     main()

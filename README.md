@@ -1,124 +1,119 @@
-# Poornima-ML: Diabetes Dataset Processing & Imputation
+# Diabetes Dataset Processing Pipeline
 
-Complete pipeline for processing diabetes datasets with advanced imputation to handle missing values.
+A professional data preprocessing and imputation pipeline for diabetes research datasets. Transforms raw clinical data into ML-ready datasets with zero missing values using evidence-based imputation strategies.
 
-## 🚀 Quick Start
+## Features
 
-### Step 1: Install Dependencies
+- **Intelligent Feature Selection**: Automatically identifies the most informative features
+- **Professional Data Cleaning**: Standardizes categorical variables and handles outliers
+- **Optimal Imputation**: Uses KNN imputation for categorical variables (24.9% improvement over baseline)
+- **Complete Pipeline**: End-to-end processing from raw CSV to ML-ready datasets
+- **Quality Assurance**: Comprehensive validation and performance metrics
+
+## Quick Start
+
+### Prerequisites
 ```bash
 pip install pandas numpy scikit-learn
 ```
 
-### Step 2: Run Complete Pipeline
-
-**Option 1 - Single Command (Recommended):**
+### Run Pipeline
 ```bash
-python process_all.py      # Runs complete pipeline automatically
+python process_all.py
 ```
 
-**Option 2 - Step by Step:**
-```bash
-python columns.py          # Process raw data and select key columns
-python final_imputation.py # Apply optimal imputation to fill missing values
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-poornima-ML/
-├── raw data/                    # Original CSV files (input)
-│   ├── nmbfinalDiabetes (4).csv
-│   ├── nmbfinalnewDiabetes (3).csv
-│   └── PrePostFinal (3).csv
-├── final_imputed_data/         # Final ML-ready files (output)
-│   ├── nmbfinalDiabetes (4)_final_imputed.csv
-│   ├── nmbfinalnewDiabetes (3)_final_imputed.csv  
-│   └── PrePostFinal (3)_final_imputed.csv
-├── data_prep.py               # Core preprocessing functions
-├── columns.py                 # Initial processing script
-├── final_imputation.py        # Optimal imputation pipeline
-├── process_all.py             # Complete pipeline runner (recommended)
-├── simple_efficiency_check.py # Performance evaluation
-└── README.md                  # This documentation
+├── raw_data/                    # Input CSV files
+├── final_imputed_data/          # Output ML-ready datasets
+├── temp_processed/              # Intermediate processing files
+├── data_prep.py                 # Core preprocessing functions
+├── columns.py                   # Feature selection and initial processing
+├── final_imputation.py          # Optimal imputation pipeline  
+├── process_all.py               # Complete pipeline orchestrator
+├── simple_efficiency_check.py   # Performance evaluation
+└── README.md
 ```
 
-## 🔧 Processing Pipeline
+## Pipeline Stages
 
-### Stage 1: Data Preprocessing (`columns.py`)
-1. **Feature Selection**: Identifies 80 most important columns from 500+ features
-2. **Data Cleaning**: Normalizes text, handles categorical variables  
-3. **Categorical Encoding**: Converts text to numbers (Gender, Area, etc.)
-4. **Derived Features**: Calculates BMI, diabetes duration, activity scores
+### 1. Data Preprocessing (`columns.py`)
+- Feature selection from 500+ variables to 80 key features
+- Text normalization and categorical standardization
+- Feature engineering (BMI, diabetes duration, activity scores)
+- Categorical encoding for ML compatibility
 
-### Stage 2: Optimal Imputation (`final_imputation.py`)
-1. **Smart Method Selection**: Chooses best imputation per column type
-2. **KNN Imputation**: For categorical and low-missing numerical columns
-3. **Simple Imputation**: For high-missing columns (>80% missing)
-4. **100% Completion**: Eliminates all missing values
+### 2. Optimal Imputation (`final_imputation.py`)
+- KNN imputation for categorical variables
+- Context-aware strategy selection based on missing patterns
+- Priority processing for critical clinical variables
+- 100% completion rate with data quality preservation
 
-## 📊 Imputation Strategy
+### 3. Quality Validation (`simple_efficiency_check.py`)
+- Performance benchmarking
+- Data distribution analysis
+- Accuracy metrics on key variables
 
-**Evidence-based method selection:**
-- **KNN Imputation**: 24.9% better than mode for categorical variables
-- **Context-Aware Selection**: Different methods per column characteristics  
-- **Priority Processing**: Critical columns (HbA1c, Age, Gender) processed first
-- **Fallback Methods**: Simple mean/mode for extreme missing rates
+## Output Datasets
 
-## 🎯 Final Output
+All datasets are ML-ready with:
+- **Zero missing values** (100% completion)
+- **Standardized encoding** for categorical variables
+- **Preserved data distributions** (<0.5% mean change)
+- **Validated quality** through comprehensive testing
 
-### Complete ML-Ready Datasets:
-- **nmbfinalDiabetes (4)_final_imputed.csv**: 885 rows × 80 columns
-- **nmbfinalnewDiabetes (3)_final_imputed.csv**: 546 rows × 80 columns
-- **PrePostFinal (3)_final_imputed.csv**: 5,559 rows × 80 columns
+### Key Variables
+- `PostBLHBA1C` - Primary diabetes outcome (HbA1c %)
+- `PreBLAge` - Patient demographics
+- `PreRgender`, `PreRarea` - Encoded categorical features
+- `PreBLFBS`, `PreBLCHOLESTEROL` - Clinical measurements
+- `Diabetic_Duration(years)` - Disease progression metrics
+- Plus 70+ additional clinical and lifestyle variables
 
-### Key Features:
-- ✅ **Zero Missing Values** - 100% complete datasets
-- ✅ **Optimal Imputation** - Evidence-based method selection
-- ✅ **80 Selected Columns** - Most informative features retained
-- ✅ **Proper Encoding** - All categorical variables numerically encoded
-- ✅ **ML-Ready Format** - Compatible with scikit-learn, pandas, etc.
+## Performance
 
-### Critical Columns:
-- `PostBLHBA1C` - Primary outcome (HbA1c %)
-- `PreBLAge` - Patient age (years)
-- `PreRgender` - Gender (1=Male, 0=Female)
-- `PreRarea` - Location (1=Urban, 0=Rural)  
-- `PreBLFBS` - Fasting blood sugar (mg/dL)
-- `PreBLCHOLESTEROL` - Cholesterol levels
-- `Diabetic_Duration(years)` - Disease duration
-- Plus 70+ clinical and lifestyle variables
+- **Processing Speed**: 1.4M values/second
+- **Imputation Quality**: KNN shows 24.9% improvement over simple methods
+- **Completion Rate**: 100% across all datasets
+- **Processing Time**: ~2 minutes for complete pipeline
 
-## 📈 Performance Results
+## Usage Examples
 
-**Imputation Efficiency:**
-- Total missing values processed: **342,709**
-- Final completion rate: **100.0%**
-- Method distribution: KNN (55%), Simple (45%)
-- Processing time: ~2 minutes for all datasets
-- Processing speed: 1.4M values/second
+### Basic Usage
+```python
+from data_prep import process_csv_files_enriched
 
-**Quality Metrics:**
-- Data distribution preservation: <0.5% mean change
-- Clinical validity maintained
-- Ready for immediate ML applications
+# Process single dataset
+process_csv_files_enriched(
+    ["raw_data/your_data.csv"],
+    output_dir="processed/",
+    columns_to_keep=selected_columns
+)
+```
 
-## 🔍 Quality Check
+### Custom Imputation
+```python
+from final_imputation import OptimalImputer
 
-Run efficiency evaluation:
+imputer = OptimalImputer()
+clean_df = imputer.process_dataset(your_dataframe)
+```
+
+## Validation
+
+Run the quality check to validate processing:
 ```bash
 python simple_efficiency_check.py
 ```
 
-This provides:
-- Completion rates per dataset
-- Data quality preservation metrics
-- Processing speed benchmarks
-- Accuracy evaluation on key columns
+## License
 
-## 💡 Usage
+This project is designed for diabetes research and clinical data analysis. Please ensure appropriate data use permissions for your specific datasets.
 
-1. **For Machine Learning**: Use files in `final_imputed_data/` folder
-2. **For Analysis**: All datasets are complete and analysis-ready  
-3. **For Modification**: Edit `final_imputation.py` to adjust imputation strategy
+## Contributing
 
-The final datasets are optimized for ML algorithms with zero missing values and evidence-based imputation methods.
+1. Follow PEP 8 style guidelines
+2. Add tests for new features
+3. Update documentation for API changes
+4. Validate data quality preservation

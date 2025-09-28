@@ -1,3 +1,12 @@
+"""Data Preprocessing and Feature Engineering Pipeline
+
+This module provides comprehensive data preprocessing for diabetes datasets including:
+- Text normalization and categorical mapping
+- Feature engineering and encoding
+- Data quality enhancement
+- Machine learning ready transformations
+"""
+
 from typing import Optional
 import os
 import pandas as pd
@@ -55,27 +64,21 @@ SLEEP_QUALITY_ORDINAL = {
 }
 
 DIETARY_HABITS_ORDINAL = {
-    # For bad habits (lower is better): skip breakfast, less fiber, less fruit, less vegetables, meat, fried food, popcorn, sweet, drink
-    "rarely/ never": 2,  # Good (rarely do bad things)
-    "sometimes": 1,      # Bad (sometimes do bad things) 
-    "usually/often": 0,  # Very bad (usually do bad things)
+    "rarely/ never": 2,
+    "sometimes": 1,
+    "usually/often": 0,
 }
 
 MILK_CONSUMPTION_ORDINAL = {
-    # For good habits (higher is better): milk consumption
-    "usually/often": 2,  # Good (usually consume milk)
-    "sometimes": 1,      # Moderate (sometimes consume milk)
-    "rarely/ never": 0,  # Bad (rarely consume milk)
+    "usually/often": 2,
+    "sometimes": 1,
+    "rarely/ never": 0,
 }
 
 
 def _clean_text_series(s: pd.Series) -> pd.Series:
-    """Coerce to string, strip surrounding whitespace and lower-case.
-
-    Keeps NaN as NaN.
-    """
+    """Clean text series by trimming whitespace and preserving NaN values."""
     s = s.copy()
-    # preserve NaN
     mask_na = s.isna()
     s = s.astype(str).str.strip()
     s.loc[mask_na] = pd.NA
@@ -83,14 +86,7 @@ def _clean_text_series(s: pd.Series) -> pd.Series:
 
 
 def normalize_gender(s: pd.Series) -> pd.Series:
-    """Normalize `PreRgender` values.
-
-    - trims and lowercase inputs
-    - maps common variants to 'Male','Female','Transgender'
-    - unknown or missing -> 'Missing'
-
-    Returns a pandas Series of cleaned string categories.
-    """
+    """Normalize gender values to standard categories."""
     s2 = _clean_text_series(s).str.lower()
 
     def _map(x: Optional[str]):
@@ -103,12 +99,7 @@ def normalize_gender(s: pd.Series) -> pd.Series:
 
 
 def map_area(s: pd.Series, as_numeric: bool = False) -> pd.Series:
-    """Normalize `PreRarea`.
-
-    - maps to canonical 'Urban' or 'Rural'
-    - missing -> 'Missing' (or -1 if as_numeric)
-    - when as_numeric=True returns int: Urban=1, Rural=0, Missing=-1
-    """
+    """Normalize area values to Urban/Rural categories."""
     s2 = _clean_text_series(s).str.lower()
     mapped = s2.map(lambda x: AREA_MAP.get(x, None) if pd.notna(x) else None)
     if as_numeric:
@@ -117,14 +108,8 @@ def map_area(s: pd.Series, as_numeric: bool = False) -> pd.Series:
 
 
 def clean_marital_status(s: pd.Series, group_rare: bool = True, rare_threshold: float = 0.01) -> pd.Series:
-    """Clean `PreRmaritalstatus` text and optionally group rare categories.
-
-    - fixes common typos (e.g., 'Seperated' -> 'Separated')
-    - groups categories whose relative frequency < rare_threshold into 'Other'
-    - missing -> 'Missing'
-    """
+    """Clean and standardize marital status values."""
     s2 = _clean_text_series(s)
-    # basic corrections
     corrections = {
         "divorcee/seperated": "Divorcee/Separated",
         "divorcee/separated": "Divorcee/Separated",
@@ -143,23 +128,15 @@ def clean_marital_status(s: pd.Series, group_rare: bool = True, rare_threshold: 
 
 
 def education_to_ordinal(s: pd.Series, unknown_value: int = -1) -> pd.Series:
-    """Map `PreReducation` to an ordinal integer scale.
-
-    Uses the mapping in EDUCATION_ORDINAL. Unknown or missing values are set to
-    `unknown_value` (default -1).
-    """
+    """Convert education levels to ordinal integer scale."""
     s2 = _clean_text_series(s).str.lower()
     mapped = s2.map(lambda x: EDUCATION_ORDINAL.get(x, None) if pd.notna(x) else None)
     return mapped.fillna(unknown_value).astype(int)
 
 
 def group_occupation(s: pd.Series) -> pd.Series:
-    """Group `PreRpresentoccupation` into broader buckets.
-
-    Returns grouped categorical strings. Unmapped or missing values -> 'Other'/'Missing'.
-    """
+    """Group occupation values into broader categories."""
     s2 = _clean_text_series(s)
-    # use a case-insensitive map
     inv_map = {k.lower(): v for k, v in OCCUPATION_GROUP.items()}
     def _map(x: Optional[str]):
         if pd.isna(x):
@@ -802,8 +779,8 @@ def process_csv_files_enriched(paths, output_dir: str = None, columns_to_keep: l
 
     Usage (from Python):
         from data_prep import process_csv_files_enriched
-        process_csv_files_enriched(r"D:\path\to\file.csv")
-        process_csv_files_enriched(["a.csv","b.csv"], output_dir="D:\cleaned")
+        process_csv_files_enriched("data/file.csv")
+        process_csv_files_enriched(["a.csv","b.csv"], output_dir="cleaned")
     """
     # normalize input to a list
     if isinstance(paths, (str,)):
@@ -865,6 +842,3 @@ def process_csv_files_enriched(paths, output_dir: str = None, columns_to_keep: l
     return out_paths
 
 
-# Example (non-CLI) usage — call `process_csv_files_enriched` from your training or ETL script:
-# from data_prep import process_csv_files_enriched
-# process_csv_files_enriched([r'D:\poornima sukumar mam files\PrePostFinal (3).csv'], columns_to_keep=[...])

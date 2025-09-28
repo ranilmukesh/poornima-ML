@@ -1,22 +1,25 @@
+"""Column Selection and Data Processing Pipeline
+
+This module processes raw diabetes datasets by:
+1. Selecting important columns from the raw data
+2. Applying data cleaning and preprocessing
+3. Feature engineering and categorical encoding
+"""
+
 import os
 import pandas as pd
 from data_prep import process_csv_files_enriched
 
-# The paths to the input CSV files (relative paths) - these are the raw data files
 input_files = [
-    r"raw data\nmbfinalDiabetes (4).csv",
-    r"raw data\nmbfinalnewDiabetes (3).csv",
-    r"raw data\PrePostFinal (3).csv",
+    "raw_data/nmbfinalDiabetes (4).csv",
+    "raw_data/nmbfinalnewDiabetes (3).csv", 
+    "raw_data/PrePostFinal (3).csv",
 ]
 
-# Output directory (absolute path) - temporary processing folder
-output_dir = r"C:\Users\maadh\OneDrive\Desktop\PhobosQ\poornima-ML\temp_processed"
+output_dir = "temp_processed"
 
-# Create output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-# The list of columns to be saved to the new file
-# I have cleaned the list you provided by removing asterisks, duplicates, and extra text.
 columns_to_keep = [
     'PostBLHBA1C','PostRgroupname', 'PreBLAge', 'PreRgender', 'PreRarea', 'PreRmaritalstatus',
     'PreReducation', 'PreRpresentoccupation', 'PreRcurrentworking', 'PreRdiafather',
@@ -50,13 +53,13 @@ columns_to_keep = [
     'current_alcohol'
 ]
 
-# Process files with enrichment and encoding
-process_csv_files_enriched(
-    input_files,
-    output_dir=output_dir,
-    columns_to_keep=columns_to_keep,
-    suffix="_selected_columns_cleaned_processed",
-    overwrite=True,
-    enrich_with_features=True,
-    top_feature_percent=0.5
-)
+if __name__ == "__main__":
+    process_csv_files_enriched(
+        input_files,
+        output_dir=output_dir,
+        columns_to_keep=columns_to_keep,
+        suffix="_selected_columns_cleaned_processed",
+        overwrite=True,
+        enrich_with_features=True,
+        top_feature_percent=0.5
+    )
