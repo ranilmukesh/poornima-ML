@@ -110,3 +110,8 @@ temp_processed/
 cleaned_data/
 backup/
 .temp/
+
+
+AUTO_SKLEARN_TROUBLESHOOTING.md
+COLAB_USAGE_GUIDE.md
+install_autosklearn_colab.py
