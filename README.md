@@ -1,25 +1,43 @@
-# Diabetes Dataset Processing Pipeline
+# Diabetes HbA1c Prediction with PyCaret AutoML
 
-A professional data preprocessing and imputation pipeline for diabetes research datasets. Transforms raw clinical data into ML-ready datasets with zero missing values using evidence-based imputation strategies.
+A comprehensive machine learning pipeline for predicting diabetes HbA1c levels using automated machine learning. Combines professional data preprocessing with PyCaret's powerful AutoML capabilities for clinical-grade predictions.
 
-## Features
+## ✨ Features
 
+### Data Processing Pipeline
 - **Intelligent Feature Selection**: Automatically identifies the most informative features
-- **Professional Data Cleaning**: Standardizes categorical variables and handles outliers
+- **Professional Data Cleaning**: Standardizes categorical variables and handles outliers  
 - **Optimal Imputation**: Uses KNN imputation for categorical variables (24.9% improvement over baseline)
 - **Complete Pipeline**: End-to-end processing from raw CSV to ML-ready datasets
-- **Quality Assurance**: Comprehensive validation and performance metrics
 
-## Quick Start
+### PyCaret AutoML
+- **Windows Compatible**: No WSL or complex setup required
+- **Automated Model Selection**: Compares 15+ regression algorithms automatically
+- **Hyperparameter Tuning**: Automated optimization for best performance
+- **Ensemble Models**: Combines top models for improved accuracy
+- **Clinical Metrics**: HbA1c-specific accuracy thresholds (±0.5% and ±1.0%)
+- **Rich Visualizations**: Comprehensive model performance plots
+
+## 🚀 Quick Start
 
 ### Prerequisites
 ```bash
-pip install pandas numpy scikit-learn
+pip install pycaret pandas numpy scikit-learn
 ```
 
-### Run Pipeline
+### Full Pipeline (Data Processing + ML)
 ```bash
+# 1. Process raw data (if needed)
 python process_all.py
+
+# 2. Run PyCaret AutoML
+python diabetes_hba1c_pycaret_automl.py
+```
+
+### Interactive Analysis
+```bash
+# Open Jupyter notebook for interactive analysis
+jupyter notebook diabetes_hba1c_automl_prediction.ipynb
 ```
 
 ## Project Structure
