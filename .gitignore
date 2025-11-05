@@ -110,6 +110,7 @@ temp_processed/
 cleaned_data/
 backup/
 .temp/
+maadhav/
 
 
 AUTO_SKLEARN_TROUBLESHOOTING.md
