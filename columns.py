@@ -41,8 +41,8 @@ columns_to_keep = [
     'PreRdiaage',
     'Diabetic_Duration(years)',
     'Duration_Status',
-    'current_smoking',
-    'current_alcohol'
+    'current_smoking', #remove the proccessed
+    'current_alcohol' #remove the proccessed
 ]
 
 if __name__ == "__main__":
