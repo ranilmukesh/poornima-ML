@@ -30,19 +30,18 @@ columns_to_keep = [
     'PreRallastmonth', 'PreRallastmonthuse', 'PreRlastmonthavg', 'PreRdrinktype',
     'PreRalmlperday', 'PreRsleepquality', 'PreRstworkvalue', 'PreRstfamilyvalue',
     'PreRsthealthvalue', 'PreRstfinancialvalue', 'PreRstsocialvalue',
-    'PreRmildactivityduration', 'PreRmoderateduration', 'PreRvigorousduration',
-    'PhysicalActivity_Optimal', 'PreRskipbreakfast', 'PreRlessfiber', 'PreRlessfruit',
+    'PreRmildactivityduration', 'PreRmoderateduration', 'PreRvigorousduration', 'PreRskipbreakfast', 'PreRlessfiber', 'PreRlessfruit',
     'PreRlessvegetable', 'PreRmilk', 'PreRmeat', 'PreRfriedfood', 'PreRpopcorn',
     'PreRsweet', 'PreRdrink', 'PreRstaplefood', 'PreRheight', 'PreRweight', 'PreRhip',
     'PreRwaist', 'PreBLPPBS', 'PreBLFBS', 'PreBLHBA1C', 'PreBLCHOLESTEROL',
-    'PreBLTRIGLYCERIDES', 'PreBLCHOLESTEROLLDL','PreRsystolicfirst',
+    'PreBLTRIGLYCERIDES','PreRsystolicfirst',
     'PreRdiastolicfirst',
     'postblage',
     'PreRdiaage',
     'Diabetic_Duration(years)',
-    'Duration_Status',
+    'Duration_Status', #Preblcholestrolldl doesnt exist in apollo , so dont use
     'current_smoking', #remove the proccessed
-    'current_alcohol' #remove the proccessed
+    'current_alcohol' #remove the proccessed(cols used for feature engineering only)
 ]
 
 if __name__ == "__main__":
