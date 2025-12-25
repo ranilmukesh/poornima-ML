@@ -38,7 +38,7 @@ columns_to_keep = [
     'PreRdiastolicfirst',
     'postblage',
     'PreRdiaage',
-    'Diabetic_Duration(years)',
+    'Diabetic_Duration',
     'Duration_Status', #Preblcholestrolldl doesnt exist in apollo , so dont use
     'current_smoking', #remove the proccessed
     'current_alcohol' #remove the proccessed(cols used for feature engineering only)
