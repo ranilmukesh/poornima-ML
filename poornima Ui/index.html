@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="CardioSense+ - AI-Powered Stroke Risk Assessment with Explainable Insights">
+    <meta name="description" content="DiabeSense+ - AI-Powered Diabetes HbA1c Prediction with Explainable Insights">
     <meta name="theme-color" content="#000000">
-    <title>CardioSense+ | AI Stroke Risk Predictor</title>
+    <title>DiabeSense+ | AI Diabetes HbA1c Predictor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -24,10 +24,10 @@
             <div class="pulse-ring"></div>
             <svg class="heart-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path
-                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l5.59-5.59L18 10l-7 7z" />
             </svg>
         </div>
-        <p class="loading-text">Analyzing Risk Factors...</p>
+        <p class="loading-text">Analyzing Diabetes Risk Factors...</p>
     </div>
 
     <!-- Main Container -->
@@ -39,12 +39,12 @@
                     <div class="logo-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path
-                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l5.59-5.59L18 10l-7 7z" />
                         </svg>
                     </div>
                     <div class="logo-text">
-                        <span class="logo-title">CardioSense<span class="plus">+</span></span>
-                        <span class="logo-subtitle">AI Risk Assessment</span>
+                        <span class="logo-title">DiabeSense<span class="plus">+</span></span>
+                        <span class="logo-subtitle">AI HbA1c Predictor</span>
                     </div>
                 </div>
                 <div class="header-badge">
@@ -57,21 +57,22 @@
         <!-- Hero Section -->
         <section class="hero">
             <div class="hero-content">
-                <h1 class="hero-title">Predictive Stroke<br><span class="highlight">Risk Analysis</span></h1>
+                <h1 class="hero-title">Personalized HbA1c Prediction<br><span class="highlight">Based on Lifestyle
+                        Intervention</span></h1>
                 <p class="hero-subtitle">Advanced machine learning with real-time explainable insights for personalized
-                    health assessment</p>
+                    diabetes health assessment</p>
             </div>
             <div class="hero-visual">
                 <div class="floating-card card-1">
-                    <span class="card-value">98.9%</span>
-                    <span class="card-label">Accuracy</span>
+                    <span class="card-value">XGB</span>
+                    <span class="card-label">Regressor</span>
                 </div>
                 <div class="floating-card card-2">
                     <span class="card-value">SHAP</span>
                     <span class="card-label">Explainability</span>
                 </div>
                 <div class="floating-card card-3">
-                    <span class="card-value">22</span>
+                    <span class="card-value">36</span>
                     <span class="card-label">Features</span>
                 </div>
             </div>
@@ -81,190 +82,553 @@
         <section class="form-section" id="assessmentForm">
             <div class="section-header">
                 <h2 class="section-title">Patient Assessment</h2>
-                <p class="section-subtitle">Enter health parameters for risk evaluation</p>
+                <p class="section-subtitle">Enter health parameters for diabetes HbA1c prediction</p>
             </div>
 
             <form id="patientForm" class="patient-form">
                 <!-- Demographics -->
                 <div class="form-group-container">
-                    <h3 class="group-title">
-                        <span class="group-icon">👤</span>
-                        Demographics
-                    </h3>
-
+                    <h3 class="group-title"><span class="group-icon">👤</span> Demographics</h3>
                     <div class="input-row">
                         <div class="input-group">
                             <label class="input-label">Gender</label>
-                            <div class="select-wrapper">
-                                <select id="gender" name="gender" required>
-                                    <option value="">Select gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                </select>
-                                <span class="select-arrow">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M6 9l6 6 6-6" />
-                                    </svg>
-                                </span>
+                            <div class="toggle-group">
+                                <input type="radio" id="gender_male" name="PreBLGender" value="Male" required>
+                                <label for="gender_male" class="toggle-btn">Male</label>
+                                <input type="radio" id="gender_female" name="PreBLGender" value="Female">
+                                <label for="gender_female" class="toggle-btn">Female</label>
+                                <input type="radio" id="gender_others" name="PreBLGender" value="Others">
+                                <label for="gender_others" class="toggle-btn">Others</label>
                             </div>
                         </div>
-
                         <div class="input-group">
                             <label class="input-label">Age (years)</label>
-                            <input type="number" id="age" name="age" placeholder="e.g., 45" min="0" max="120" required>
-                            <span class="input-hint">0-120 years</span>
+                            <input type="number" id="PostBLAge" placeholder="e.g., 55" min="18" max="90" step="1"
+                                required>
+                            <span class="input-hint">Range: 18 – 90 years</span>
                         </div>
                     </div>
-
                     <div class="input-row">
                         <div class="input-group">
-                            <label class="input-label">Ever Married</label>
+                            <label class="input-label">Place of Residence</label>
                             <div class="toggle-group">
-                                <input type="radio" id="married_yes" name="ever_married" value="Yes" required>
-                                <label for="married_yes" class="toggle-btn">Yes</label>
-                                <input type="radio" id="married_no" name="ever_married" value="No">
-                                <label for="married_no" class="toggle-btn">No</label>
+                                <input type="radio" id="area_urban" name="PreRarea" value="1" required>
+                                <label for="area_urban" class="toggle-btn">Urban</label>
+                                <input type="radio" id="area_rural" name="PreRarea" value="2">
+                                <label for="area_rural" class="toggle-btn">Rural</label>
                             </div>
                         </div>
-
                         <div class="input-group">
-                            <label class="input-label">Residence Type</label>
-                            <div class="toggle-group">
-                                <input type="radio" id="urban" name="Residence_type" value="Urban" required>
-                                <label for="urban" class="toggle-btn">Urban</label>
-                                <input type="radio" id="rural" name="Residence_type" value="Rural">
-                                <label for="rural" class="toggle-btn">Rural</label>
+                            <label class="input-label">Marital Status</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmaritalstatus" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Married</option>
+                                    <option value="2">Unmarried</option>
+                                    <option value="3">Divorcee / Separated</option>
+                                    <option value="4">Widow / Widower</option>
+                                    <option value="5">Others</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Education</label>
+                            <div class="select-wrapper">
+                                <select id="PreReducation" required>
+                                    <option value="">Select</option>
+                                    <option value="1">No formal schooling</option>
+                                    <option value="2">Up to primary school</option>
+                                    <option value="3">Up to high school</option>
+                                    <option value="4">Up to intermediate</option>
+                                    <option value="5">Up to university</option>
+                                    <option value="6">University completed or higher</option>
+                                    <option value="7">Others</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Occupation</label>
+                            <div class="select-wrapper">
+                                <select id="PreRpresentoccupation" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Professional / Executive / Big Business</option>
+                                    <option value="2">Clerical / Medium Business</option>
+                                    <option value="3">Self-employed / Skilled</option>
+                                    <option value="4">Unskilled / Landless Laborer</option>
+                                    <option value="5">Homemaker</option>
+                                    <option value="6">Retired</option>
+                                    <option value="7">Unemployed (able to work)</option>
+                                    <option value="8">Unemployed (unable to work)</option>
+                                    <option value="9">Others</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Medical History -->
+                <!-- Family Diabetes History -->
                 <div class="form-group-container">
-                    <h3 class="group-title">
-                        <span class="group-icon">🏥</span>
-                        Medical History
-                    </h3>
-
+                    <h3 class="group-title"><span class="group-icon">👨‍👩‍👧‍👦</span> Family Diabetes History</h3>
                     <div class="input-row">
                         <div class="input-group">
-                            <label class="input-label">Hypertension</label>
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="hypertension" name="hypertension">
-                                <label for="hypertension" class="checkbox-label">
-                                    <span class="checkbox-box">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </span>
-                                    <span class="checkbox-text">
-                                        <span class="checkbox-title">High Blood Pressure</span>
-                                        <span class="checkbox-desc">History of hypertension</span>
-                                    </span>
-                                </label>
+                            <label class="input-label">Diabetic father?</label>
+                            <div class="toggle-group">
+                                <input type="radio" id="diafather_no" name="PreRdiafather" value="0" checked>
+                                <label for="diafather_no" class="toggle-btn">No</label>
+                                <input type="radio" id="diafather_yes" name="PreRdiafather" value="1">
+                                <label for="diafather_yes" class="toggle-btn">Yes</label>
                             </div>
                         </div>
-
                         <div class="input-group">
-                            <label class="input-label">Heart Disease</label>
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="heart_disease" name="heart_disease">
-                                <label for="heart_disease" class="checkbox-label">
-                                    <span class="checkbox-box">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </span>
-                                    <span class="checkbox-text">
-                                        <span class="checkbox-title">Cardiac Condition</span>
-                                        <span class="checkbox-desc">Any heart disease</span>
-                                    </span>
-                                </label>
+                            <label class="input-label">Diabetic mother?</label>
+                            <div class="toggle-group">
+                                <input type="radio" id="diamother_no" name="PreRdiamother" value="0" checked>
+                                <label for="diamother_no" class="toggle-btn">No</label>
+                                <input type="radio" id="diamother_yes" name="PreRdiamother" value="1">
+                                <label for="diamother_yes" class="toggle-btn">Yes</label>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Health Metrics -->
-                <div class="form-group-container">
-                    <h3 class="group-title">
-                        <span class="group-icon">📊</span>
-                        Health Metrics
-                    </h3>
-
                     <div class="input-row">
                         <div class="input-group">
-                            <label class="input-label">Average Glucose Level</label>
-                            <div class="input-with-unit">
-                                <input type="number" id="avg_glucose_level" name="avg_glucose_level"
-                                    placeholder="e.g., 106.5" step="0.01" min="0" required>
-                                <span class="input-unit">mg/dL</span>
+                            <label class="input-label">Diabetic brother?</label>
+                            <div class="toggle-group">
+                                <input type="radio" id="diabrother_no" name="PreRdiabrother" value="0" checked>
+                                <label for="diabrother_no" class="toggle-btn">No</label>
+                                <input type="radio" id="diabrother_yes" name="PreRdiabrother" value="1">
+                                <label for="diabrother_yes" class="toggle-btn">Yes</label>
                             </div>
-                            <span class="input-hint">Normal: 70-100 mg/dL</span>
                         </div>
-
                         <div class="input-group">
-                            <label class="input-label">BMI (Body Mass Index)</label>
-                            <div class="input-with-unit">
-                                <input type="number" id="bmi" name="bmi" placeholder="e.g., 28.5" step="0.1" min="0"
-                                    max="100" required>
-                                <span class="input-unit">kg/m²</span>
+                            <label class="input-label">Diabetic sister?</label>
+                            <div class="toggle-group">
+                                <input type="radio" id="diasister_no" name="PreRdiasister" value="0" checked>
+                                <label for="diasister_no" class="toggle-btn">No</label>
+                                <input type="radio" id="diasister_yes" name="PreRdiasister" value="1">
+                                <label for="diasister_yes" class="toggle-btn">Yes</label>
                             </div>
-                            <span class="input-hint">Normal: 18.5-24.9</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Lifestyle -->
                 <div class="form-group-container">
-                    <h3 class="group-title">
-                        <span class="group-icon">🌿</span>
-                        Lifestyle
-                    </h3>
-
+                    <h3 class="group-title"><span class="group-icon">🌿</span> Lifestyle</h3>
                     <div class="input-row">
                         <div class="input-group">
-                            <label class="input-label">Work Type</label>
-                            <div class="select-wrapper">
-                                <select id="work_type" name="work_type" required>
-                                    <option value="">Select work type</option>
-                                    <option value="Private">Private Sector</option>
-                                    <option value="Self-employed">Self-employed</option>
-                                    <option value="Govt_job">Government Job</option>
-                                    <option value="children">Children/Student</option>
-                                    <option value="Never_worked">Never Worked</option>
-                                </select>
-                                <span class="select-arrow">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M6 9l6 6 6-6" />
-                                    </svg>
-                                </span>
+                            <label class="input-label">Do you currently smoke?</label>
+                            <div class="toggle-group">
+                                <input type="radio" id="smoking_no" name="current_smoking" value="0" checked>
+                                <label for="smoking_no" class="toggle-btn">No</label>
+                                <input type="radio" id="smoking_yes" name="current_smoking" value="1">
+                                <label for="smoking_yes" class="toggle-btn">Yes</label>
                             </div>
                         </div>
-
                         <div class="input-group">
-                            <label class="input-label">Smoking Status</label>
-                            <div class="select-wrapper">
-                                <select id="smoking_status" name="smoking_status" required>
-                                    <option value="">Select status</option>
-                                    <option value="never smoked">Never Smoked</option>
-                                    <option value="formerly smoked">Formerly Smoked</option>
-                                    <option value="smokes">Currently Smokes</option>
-                                    <option value="Unknown">Unknown</option>
-                                </select>
-                                <span class="select-arrow">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M6 9l6 6 6-6" />
-                                    </svg>
-                                </span>
+                            <label class="input-label">Do you drink alcohol?</label>
+                            <div class="toggle-group">
+                                <input type="radio" id="alcohol_no" name="current_alcohol" value="0" checked>
+                                <label for="alcohol_no" class="toggle-btn">No</label>
+                                <input type="radio" id="alcohol_yes" name="current_alcohol" value="1">
+                                <label for="alcohol_yes" class="toggle-btn">Yes</label>
                             </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Sleep quality (last 1 month)</label>
+                            <div class="select-wrapper">
+                                <select id="PreRsleepquality" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Very good</option>
+                                    <option value="2">Fairly good</option>
+                                    <option value="3">Fairly bad</option>
+                                    <option value="4">Very bad</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Select Care Plan</label>
+                            <div class="select-wrapper">
+                                <select id="PostRgroupname" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Standard care + Yoga</option>
+                                    <option value="2">Standard care</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Physical Activity -->
+                <div class="form-group-container">
+                    <h3 class="group-title"><span class="group-icon">🏃</span> Physical Activity</h3>
+                    <!-- Mild Activity -->
+                    <p style="font-size:0.8rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">Mild activity
+                        (slow / normal walking)</p>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">How long per day?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmildactivityduration" required>
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">At least 10 min</option>
+                                    <option value="2">10 – 30 min</option>
+                                    <option value="3">30 min – 1 hr</option>
+                                    <option value="4">1 hr – 1.5 hrs</option>
+                                    <option value="5">> 1.5 hrs</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group"></div>
+                    </div>
+                    <!-- Moderate Activity -->
+                    <p
+                        style="font-size:0.8rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;margin-top:16px;">
+                        Moderate activity (fast walking, cycling, swimming)</p>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">How often?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmoderate" required>
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">Once a month</option>
+                                    <option value="2">2 to 3 times a month</option>
+                                    <option value="3">Once a week</option>
+                                    <option value="4">2 to 3 times a week</option>
+                                    <option value="5">4 to 5 times a week</option>
+                                    <option value="6">Every day</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">How long per day?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmoderateduration" required>
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">At least 10 min</option>
+                                    <option value="2">10 – 30 min</option>
+                                    <option value="3">30 min – 1 hr</option>
+                                    <option value="4">1 hr – 1.5 hrs</option>
+                                    <option value="5">> 1.5 hrs</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Vigorous Activity -->
+                    <p
+                        style="font-size:0.8rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;margin-top:16px;">
+                        Vigorous activity (running, football, gym)</p>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">How often?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRvigorous" required>
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">Once a month</option>
+                                    <option value="2">2 to 3 times a month</option>
+                                    <option value="3">Once a week</option>
+                                    <option value="4">2 to 3 times a week</option>
+                                    <option value="5">4 to 5 times a week</option>
+                                    <option value="6">Every day</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">How long per day?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRvigorousduration" required>
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">At least 10 min</option>
+                                    <option value="2">10 – 30 min</option>
+                                    <option value="3">30 min – 1 hr</option>
+                                    <option value="4">1 hr – 1.5 hrs</option>
+                                    <option value="5">> 1.5 hrs</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dietary Habits -->
+                <div class="form-group-container">
+                    <h3 class="group-title"><span class="group-icon">🥗</span> Dietary Habits</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Skip breakfast?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRskipbreakfast" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Eat little fruit? (&lt;2 servings/day)</label>
+                            <div class="select-wrapper">
+                                <select id="PreRlessfruit" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Eat little vegetables? (&lt;2 servings/day)</label>
+                            <div class="select-wrapper">
+                                <select id="PreRlessvegetable" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Consume milk/curd &lt;400 ml/day?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmilk" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Eat meat/fish &gt;250 gms/day?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmeat" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Eat fried food (samosas, fries)?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRfriedfood" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Eat sweets &gt;2 times/day?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRsweet" required>
+                                    <option value="">Select</option>
+                                    <option value="1">Usually / Often</option>
+                                    <option value="2">Sometimes</option>
+                                    <option value="3">Rarely / Never</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group"></div>
+                    </div>
+                </div>
+
+                <!-- Health Metrics -->
+                <div class="form-group-container">
+                    <h3 class="group-title"><span class="group-icon">📊</span> Health Metrics</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Waist Circumference (cm)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreRwaist" placeholder="e.g., 92" step="0.1" min="50" max="150"
+                                    required>
+                                <span class="input-unit">cm</span>
+                            </div>
+                            <span class="input-hint">Range: 50 – 150 cm</span>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">BMI</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreRBMI" placeholder="e.g., 27.5" step="0.01" min="10" max="60"
+                                    required>
+                                <span class="input-unit">kg/m²</span>
+                            </div>
+                            <span class="input-hint">Range: 10 – 60</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">SBP (mmHg)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreRsystolicfirst" placeholder="e.g., 130" min="70" max="250"
+                                    required>
+                                <span class="input-unit">mmHg</span>
+                            </div>
+                            <span class="input-hint">Range: 70 – 250 mmHg</span>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">DBP (mmHg)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreRdiastolicfirst" placeholder="e.g., 84" min="40" max="150"
+                                    required>
+                                <span class="input-unit">mmHg</span>
+                            </div>
+                            <span class="input-hint">Range: 40 – 150 mmHg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blood Work -->
+                <div class="form-group-container">
+                    <h3 class="group-title"><span class="group-icon">🩸</span> Blood Work</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">FBS (mg/dL)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreBLFBS" placeholder="e.g., 140" step="0.1" min="50" max="400"
+                                    required>
+                                <span class="input-unit">mg/dL</span>
+                            </div>
+                            <span class="input-hint">Range: 50 – 400 mg/dL</span>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">PPBS (mg/dL)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreBLPPBS" placeholder="e.g., 220" step="0.1" min="70"
+                                    max="600" required>
+                                <span class="input-unit">mg/dL</span>
+                            </div>
+                            <span class="input-hint">Range: 70 – 600 mg/dL</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">HbA1c (%)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreBLHBA1C" placeholder="e.g., 8.2" step="0.1" min="4.0"
+                                    max="18.0" required>
+                                <span class="input-unit">%</span>
+                            </div>
+                            <span class="input-hint">Range: 4.0 – 18.0 %</span>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Diabetic Duration (years)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="Diabetic_Duration" placeholder="e.g., 5" step="0.1" min="0"
+                                    max="60" required>
+                                <span class="input-unit">years</span>
+                            </div>
+                            <span class="input-hint">Range: 0 – 60 years</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">CHOLESTEROL (mg/dL)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreBLCHOLESTEROL" placeholder="e.g., 210" min="80" max="400"
+                                    required>
+                                <span class="input-unit">mg/dL</span>
+                            </div>
+                            <span class="input-hint">Range: 80 – 400 mg/dL</span>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">TRIGLYCERIDES (mg/dL)</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="PreBLTRIGLYCERIDES" placeholder="e.g., 180" min="50" max="1000"
+                                    required>
+                                <span class="input-unit">mg/dL</span>
+                            </div>
+                            <span class="input-hint">Range: 50 – 1000 mg/dL</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Submit Button -->
                 <button type="submit" class="submit-btn" id="submitBtn">
-                    <span class="btn-text">Analyze Risk</span>
+                    <span class="btn-text">Predict HbA1c</span>
                     <span class="btn-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -288,7 +652,7 @@
             <!-- Risk Score Card -->
             <div class="risk-card" id="riskCard">
                 <div class="risk-header">
-                    <span class="risk-label">Stroke Risk Level</span>
+                    <span class="risk-label">Predicted HbA1c after 3 months</span>
                     <span class="risk-confidence" id="riskConfidence">High Confidence</span>
                 </div>
 
@@ -306,6 +670,14 @@
                     <div class="risk-level" id="riskLevel">CALCULATING</div>
                 </div>
 
+                <!-- Clinical Interpretation Lines -->
+                <div id="clinicalInterpretation"
+                    style="margin-top:16px;text-align:left;color:var(--cream);font-size:0.85rem;line-height:1.6;">
+                    <p id="outcomeLine" style="margin-bottom:4px;"></p>
+                    <p id="responseLine" style="margin-bottom:4px;"></p>
+                    <p id="targetLine" style="margin-bottom:0;"></p>
+                </div>
+
                 <div class="risk-meter">
                     <div class="meter-track">
                         <div class="meter-fill" id="meterFill"></div>
@@ -314,32 +686,24 @@
                         </div>
                     </div>
                     <div class="meter-labels">
-                        <span>Low</span>
-                        <span>Medium</span>
-                        <span>High</span>
+                        <span>Normoglycemia</span>
+                        <span>Prediabetes</span>
+                        <span>Diabetes</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Risk Score Card end above -->
-
             <!-- Interactive Risk Simulator -->
             <div class="sim-card hidden" id="interactiveSimulator">
                 <div class="sim-card-header">
-                    <h3 class="sim-title">Interactive Risk Simulator</h3>
+                    <h3 class="sim-title">Interactive HbA1c Simulator</h3>
                 </div>
-
                 <div class="sim-card-body">
                     <div class="sim-chart-container">
                         <svg viewBox="0 0 200 120" class="sim-svg">
-                            <!-- Background Track -->
                             <path d="M 30 100 A 70 70 0 0 1 170 100" fill="none" class="sim-track-bg" />
-
-                            <!-- Dynamic Arc -->
                             <path id="simTrack" d="M 30 100 A 70 70 0 0 1 170 100" fill="none" class="sim-track-fill"
                                 stroke-dasharray="219.91" stroke-dashoffset="219.91" />
-
-                            <!-- Baseline Marker -->
                             <g id="simBaselineGroup" style="transform-origin: 100px 100px;">
                                 <line x1="16" y1="100" x2="44" y2="100" class="sim-baseline-line" />
                                 <g id="simBaselineTextGroup" transform="translate(18, 90)">
@@ -347,8 +711,6 @@
                                     <text x="0" y="1" class="sim-marker-text">Baseline</text>
                                 </g>
                             </g>
-
-                            <!-- Target Marker -->
                             <g id="simTargetGroup" style="transform-origin: 100px 100px;">
                                 <line x1="16" y1="100" x2="44" y2="100" class="sim-target-line" />
                                 <g id="simTargetTextGroup" transform="translate(18, 110)">
@@ -357,62 +719,52 @@
                                         font-weight="600">Target</text>
                                 </g>
                             </g>
-
-                            <!-- Center Shield Icon -->
                             <path d="M 100 18 L 92 24 V 34 C 92 42 100 48 100 48 C 100 48 108 42 108 34 V 24 Z"
                                 class="sim-shield-icon" />
                             <text x="100" y="36" class="sim-shield-cross">+</text>
                         </svg>
-
-                        <!-- Center Text -->
                         <div class="sim-center-text">
                             <div id="simRiskValue" class="sim-val">--%</div>
-                            <div id="simRiskLabel" class="sim-lbl">STANDARD RISK</div>
+                            <div id="simRiskLabel" class="sim-lbl">PREDICTED HbA1c</div>
                         </div>
                     </div>
-
                     <div class="sim-stats-row">
                         <div class="sim-stat">
-                            <span class="sim-stat-lbl">Stroke Probability</span>
-                            <strong id="simTargetStat" class="sim-stat-val">--%</strong>
+                            <span class="sim-stat-lbl">Predicted HbA1c</span>
+                            <strong id="simTargetStat" class="sim-stat-val">--</strong>
                         </div>
                         <div class="sim-stat">
-                            <span class="sim-stat-lbl">Risk Delta</span>
-                            <strong id="simDeltaStat" class="sim-stat-val">--%</strong>
+                            <span class="sim-stat-lbl">Delta</span>
+                            <strong id="simDeltaStat" class="sim-stat-val">--</strong>
                         </div>
                         <div class="sim-stat">
-                            <span class="sim-stat-lbl">Target Goal</span>
-                            <strong id="simBaselineStat" class="sim-stat-val">--%</strong>
+                            <span class="sim-stat-lbl">Baseline</span>
+                            <strong id="simBaselineStat" class="sim-stat-val">--</strong>
                         </div>
                     </div>
-
                     <div class="sim-controls-grid">
                         <div class="sim-control">
-                            <span class="sim-control-lbl">Age</span>
-                            <input type="range" id="simAgeSlider" min="20" max="100" step="1" class="sim-slider">
-                            <input type="number" id="simAgeNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
                             <span class="sim-control-lbl">BMI</span>
-                            <input type="range" id="simBmiSlider" min="15" max="60" step="0.1" class="sim-slider">
+                            <input type="range" id="simBmiSlider" min="10" max="60" step="0.1" class="sim-slider">
                             <input type="number" id="simBmiNum" class="sim-num-input">
                         </div>
                         <div class="sim-control">
-                            <span class="sim-control-lbl">Glucose (mg/dL)</span>
-                            <input type="range" id="simGlucoseSlider" min="50" max="300" step="1" class="sim-slider">
-                            <input type="number" id="simGlucoseNum" class="sim-num-input">
+                            <span class="sim-control-lbl">FBS (mg/dL)</span>
+                            <input type="range" id="simFbsSlider" min="50" max="400" step="1" class="sim-slider">
+                            <input type="number" id="simFbsNum" class="sim-num-input">
                         </div>
-                        <div class="sim-control sim-toggle">
-                            <span class="sim-control-lbl">Smoker</span>
-                            <label class="sim-switch">
-                                <input type="checkbox" id="simSmokerToggle">
-                                <span class="sim-slider-round"></span>
-                            </label>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">Pre-HbA1c (%)</span>
+                            <input type="range" id="simHba1cSlider" min="4" max="18" step="0.1" class="sim-slider">
+                            <input type="number" id="simHba1cNum" class="sim-num-input">
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">SBP (mmHg)</span>
+                            <input type="range" id="simBpSlider" min="70" max="250" step="1" class="sim-slider">
+                            <input type="number" id="simBpNum" class="sim-num-input">
                         </div>
                     </div>
-
-                    <div class="sim-disclaimer">
-                        AI-generated, may include mistakes. Don't enter sensitive personal info.
+                    <div class="sim-disclaimer">AI-generated, may include mistakes. Don't enter sensitive personal info.
                     </div>
                 </div>
             </div>
@@ -423,11 +775,7 @@
                     <h2 class="section-title">Risk Factor Analysis</h2>
                     <p class="section-subtitle">SHAP-based explainable AI insights</p>
                 </div>
-
-                <div class="factors-container" id="factorsContainer">
-                    <!-- Factors will be dynamically inserted -->
-                </div>
-
+                <div class="factors-container" id="factorsContainer"></div>
                 <div class="info-card">
                     <div class="info-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -438,7 +786,7 @@
                     <div class="info-content">
                         <h4>About SHAP Analysis</h4>
                         <p>SHAP (SHapley Additive exPlanations) values show how each factor contributes to your
-                            individual risk prediction, providing transparent and interpretable insights.</p>
+                            individual HbA1c prediction, providing transparent and interpretable insights.</p>
                     </div>
                 </div>
             </div>
@@ -448,30 +796,20 @@
                 <div class="section-header">
                     <h2 class="section-title">Personalized Insights</h2>
                 </div>
-                <div class="recommendations-grid" id="recommendationsGrid">
-                    <!-- Will be populated dynamically -->
-                </div>
+                <div class="recommendations-grid" id="recommendationsGrid"></div>
             </div>
 
             <!-- What-If Scenario Analysis -->
             <div class="whatif-section" id="whatifSection" style="display:none;">
                 <div class="section-header">
                     <h2 class="section-title">🔮 What-If Scenario Analysis</h2>
-                    <p class="section-subtitle">See how modifying risk factors could change your prediction</p>
+                    <p class="section-subtitle">See how modifying risk factors could change your predicted HbA1c</p>
                 </div>
-
-                <!-- What-If Loading -->
                 <div class="whatif-loading" id="whatifLoading">
                     <div class="whatif-loading-spinner"></div>
                     <p>Generating counterfactual scenarios...</p>
                 </div>
-
-                <!-- Scenario Cards -->
-                <div class="whatif-scenarios-grid" id="whatifScenariosGrid">
-                    <!-- Dynamically populated -->
-                </div>
-
-                <!-- Combined Best Outcome -->
+                <div class="whatif-scenarios-grid" id="whatifScenariosGrid"></div>
                 <div class="whatif-combined-card" id="whatifCombinedCard" style="display:none;">
                     <div class="combined-header">
                         <span class="combined-icon">🌟</span>
@@ -482,7 +820,7 @@
                     </div>
                     <div class="combined-results">
                         <div class="combined-original">
-                            <span class="combined-label">Current Risk</span>
+                            <span class="combined-label">Current Predicted HbA1c</span>
                             <span class="combined-value" id="combinedOriginalRisk">—</span>
                         </div>
                         <div class="combined-arrow">
@@ -491,16 +829,12 @@
                             </svg>
                         </div>
                         <div class="combined-modified">
-                            <span class="combined-label">Potential Risk</span>
+                            <span class="combined-label">Potential HbA1c</span>
                             <span class="combined-value" id="combinedModifiedRisk">—</span>
                         </div>
                     </div>
-                    <div class="combined-delta" id="combinedDelta">
-                        <!-- Dynamically populated -->
-                    </div>
+                    <div class="combined-delta" id="combinedDelta"></div>
                 </div>
-
-                <!-- Disclaimer -->
                 <div class="whatif-disclaimer">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                         <path
@@ -522,15 +856,15 @@
                 <div class="footer-meta">
                     <span>Powered by XGBoost + SHAP</span>
                     <span class="divider">•</span>
-                    <span>CardioSense+ v1.0</span>
+                    <span>DiabeSense+ v1.0</span>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- Chat Widget (floating, bottom-right) -->
+    <!-- Chat Widget -->
     <div class="chat-widget" id="chatWidget" style="display:none;">
-        <button class="chat-toggle" id="chatToggle" title="Chat with CardioSense AI">
+        <button class="chat-toggle" id="chatToggle" title="Chat with DiabeSense AI">
             <svg class="chat-icon-open" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
             </svg>
@@ -540,16 +874,13 @@
             </svg>
             <span class="chat-pulse"></span>
         </button>
-
         <div class="chat-panel" id="chatPanel">
             <div class="chat-header">
                 <div class="chat-header-info">
                     <div class="chat-avatar">🤖</div>
                     <div>
-                        <h4 class="chat-name">CardioSense AI</h4>
-                        <span class="chat-status" id="chatStatus">
-                            <span class="status-dot"></span> Online
-                        </span>
+                        <h4 class="chat-name">DiabeSense AI</h4>
+                        <span class="chat-status" id="chatStatus"><span class="status-dot"></span> Online</span>
                     </div>
                 </div>
                 <button class="chat-minimize" id="chatMinimize">
@@ -558,9 +889,7 @@
                     </svg>
                 </button>
             </div>
-
             <div class="chat-messages" id="chatMessages"></div>
-
             <div class="chat-input-area">
                 <input type="text" class="chat-input" id="chatInput" placeholder="Ask about your results..."
                     autocomplete="off" />

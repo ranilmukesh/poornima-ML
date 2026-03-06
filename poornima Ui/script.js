@@ -1,7 +1,6 @@
 /**
- * CardioSense+ Frontend Application
- * AI-Powered Stroke Risk Assessment Interface
- * 
+ * DiabeSense+ Frontend Application
+ * AI-Powered Diabetes HbA1c Prediction Interface
  * Connects to FastAPI backend for predictions and SHAP explanations
  */
 
@@ -39,25 +38,15 @@ let currentExplanation = null;
 let currentWhatIf = null;
 let currentFormData = null;
 
-/**
- * Initialize the application
- */
 function init() {
     setupEventListeners();
     checkAPIHealth();
 }
 
-/**
- * Setup event listeners
- */
 function setupEventListeners() {
-    // Form submission
     elements.patientForm.addEventListener('submit', handleFormSubmit);
-
-    // Back button
     elements.backBtn.addEventListener('click', showForm);
 
-    // Input animations
     const inputs = document.querySelectorAll('input, select');
     inputs.forEach(input => {
         input.addEventListener('focus', () => {
@@ -69,14 +58,10 @@ function setupEventListeners() {
     });
 }
 
-/**
- * Check API health status
- */
 async function checkAPIHealth() {
     try {
         const response = await fetch(`${API_BASE_URL}/health`);
         const data = await response.json();
-
         if (!data.model_loaded) {
             showNotification('Model not loaded. Please run train_model.py first.', 'warning');
         }
@@ -85,24 +70,14 @@ async function checkAPIHealth() {
     }
 }
 
-/**
- * Handle form submission
- */
 async function handleFormSubmit(e) {
     e.preventDefault();
-
-    // Collect form data
     const formData = collectFormData();
+    if (!validateFormData(formData)) return;
 
-    if (!validateFormData(formData)) {
-        return;
-    }
-
-    // Show loading
     showLoading(true);
 
     try {
-        // Make parallel API calls for prediction and explanation
         const [predictionResult, explanationResult] = await Promise.all([
             fetchPrediction(formData),
             fetchExplanation(formData)
@@ -112,12 +87,8 @@ async function handleFormSubmit(e) {
         currentExplanation = explanationResult;
         currentFormData = formData;
 
-        // Display results
         displayResults(predictionResult, explanationResult);
-
-        // Fetch What-If analysis in background (non-blocking)
         fetchWhatIfAnalysis(formData);
-
     } catch (error) {
         console.error('API Error:', error);
         showNotification('Failed to get prediction. Please try again.', 'error');
@@ -126,156 +97,198 @@ async function handleFormSubmit(e) {
 }
 
 /**
- * Collect form data
+ * Collect all 36 diabetes form fields
  */
 function collectFormData() {
     return {
-        gender: document.getElementById('gender').value,
-        age: parseFloat(document.getElementById('age').value),
-        hypertension: document.getElementById('hypertension').checked ? 1 : 0,
-        heart_disease: document.getElementById('heart_disease').checked ? 1 : 0,
-        ever_married: document.querySelector('input[name="ever_married"]:checked')?.value || '',
-        work_type: document.getElementById('work_type').value,
-        Residence_type: document.querySelector('input[name="Residence_type"]:checked')?.value || '',
-        avg_glucose_level: parseFloat(document.getElementById('avg_glucose_level').value),
-        bmi: parseFloat(document.getElementById('bmi').value),
-        smoking_status: document.getElementById('smoking_status').value
+        PostBLAge: parseFloat(document.getElementById('PostBLAge').value),
+        PreBLGender: document.querySelector('input[name="PreBLGender"]:checked')?.value || '',
+        PreRarea: parseInt(document.querySelector('input[name="PreRarea"]:checked')?.value || '0'),
+        PreRmaritalstatus: parseFloat(document.getElementById('PreRmaritalstatus').value),
+        PreReducation: parseFloat(document.getElementById('PreReducation').value),
+        PreRpresentoccupation: parseFloat(document.getElementById('PreRpresentoccupation').value),
+        PreRdiafather: parseInt(document.querySelector('input[name="PreRdiafather"]:checked')?.value || '0'),
+        PreRdiamother: parseInt(document.querySelector('input[name="PreRdiamother"]:checked')?.value || '0'),
+        PreRdiabrother: parseInt(document.querySelector('input[name="PreRdiabrother"]:checked')?.value || '0'),
+        PreRdiasister: parseInt(document.querySelector('input[name="PreRdiasister"]:checked')?.value || '0'),
+        current_smoking: parseInt(document.querySelector('input[name="current_smoking"]:checked')?.value || '0'),
+        current_alcohol: parseInt(document.querySelector('input[name="current_alcohol"]:checked')?.value || '0'),
+        PreRsleepquality: parseFloat(document.getElementById('PreRsleepquality').value),
+        PreRmildactivityduration: parseFloat(document.getElementById('PreRmildactivityduration').value),
+        PreRmoderate: parseFloat(document.getElementById('PreRmoderate').value),
+        PreRmoderateduration: parseFloat(document.getElementById('PreRmoderateduration').value),
+        PreRvigorous: parseFloat(document.getElementById('PreRvigorous').value),
+        PreRvigorousduration: parseFloat(document.getElementById('PreRvigorousduration').value),
+        PreRskipbreakfast: parseFloat(document.getElementById('PreRskipbreakfast').value),
+        PreRlessfruit: parseFloat(document.getElementById('PreRlessfruit').value),
+        PreRlessvegetable: parseFloat(document.getElementById('PreRlessvegetable').value),
+        PreRmilk: parseFloat(document.getElementById('PreRmilk').value),
+        PreRmeat: parseFloat(document.getElementById('PreRmeat').value),
+        PreRfriedfood: parseFloat(document.getElementById('PreRfriedfood').value),
+        PreRsweet: parseFloat(document.getElementById('PreRsweet').value),
+        PreRwaist: parseFloat(document.getElementById('PreRwaist').value),
+        PreRBMI: parseFloat(document.getElementById('PreRBMI').value),
+        PreRsystolicfirst: parseFloat(document.getElementById('PreRsystolicfirst').value),
+        PreRdiastolicfirst: parseFloat(document.getElementById('PreRdiastolicfirst').value),
+        PreBLPPBS: parseFloat(document.getElementById('PreBLPPBS').value),
+        PreBLFBS: parseFloat(document.getElementById('PreBLFBS').value),
+        PreBLHBA1C: parseFloat(document.getElementById('PreBLHBA1C').value),
+        PreBLCHOLESTEROL: parseFloat(document.getElementById('PreBLCHOLESTEROL').value),
+        PreBLTRIGLYCERIDES: parseFloat(document.getElementById('PreBLTRIGLYCERIDES').value),
+        Diabetic_Duration: parseFloat(document.getElementById('Diabetic_Duration').value),
+        PostRgroupname: parseInt(document.getElementById('PostRgroupname').value || '0'),
     };
 }
 
-/**
- * Validate form data
- */
 function validateFormData(data) {
-    const requiredFields = ['gender', 'age', 'ever_married', 'work_type', 'Residence_type', 'avg_glucose_level', 'bmi', 'smoking_status'];
-
-    for (const field of requiredFields) {
-        if (!data[field] && data[field] !== 0) {
-            showNotification(`Please fill in all required fields.`, 'warning');
-            return false;
-        }
-    }
-
-    if (data.age < 0 || data.age > 120) {
-        showNotification('Please enter a valid age (0-120).', 'warning');
-        return false;
-    }
-
-    if (data.bmi < 0 || data.bmi > 100) {
-        showNotification('Please enter a valid BMI (0-100).', 'warning');
-        return false;
-    }
-
+    // Check critical fields
+    if (!data.PreBLGender) { showNotification('Please select a gender.', 'warning'); return false; }
+    if (isNaN(data.PostBLAge) || data.PostBLAge < 18) { showNotification('Please enter a valid age (18-90).', 'warning'); return false; }
+    if (!data.PreRarea) { showNotification('Please select place of residence.', 'warning'); return false; }
+    if (!data.PostRgroupname) { showNotification('Please select a care plan.', 'warning'); return false; }
+    if (isNaN(data.PreBLHBA1C) || data.PreBLHBA1C <= 0) { showNotification('Please enter pre-treatment HbA1c.', 'warning'); return false; }
+    if (isNaN(data.PreBLFBS) || data.PreBLFBS <= 0) { showNotification('Please enter fasting blood sugar.', 'warning'); return false; }
+    if (isNaN(data.PreRBMI) || data.PreRBMI <= 0) { showNotification('Please enter BMI.', 'warning'); return false; }
     return true;
 }
 
-/**
- * Fetch prediction from API
- */
 async function fetchPrediction(data) {
     const response = await fetch(`${API_BASE_URL}/predict`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return response.json();
 }
 
-/**
- * Fetch explanation from API
- */
 async function fetchExplanation(data) {
     const response = await fetch(`${API_BASE_URL}/explain`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return response.json();
 }
 
-/**
- * Display results
- */
 function displayResults(prediction, explanation) {
-    // Hide loading after a short delay for smooth transition
     setTimeout(() => {
         showLoading(false);
-
-        // Switch views
         elements.assessmentForm.classList.add('hidden');
         elements.resultsSection.classList.remove('hidden');
-
-        // Scroll to top smoothly
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Animate results
         setTimeout(() => {
             animateRiskScore(prediction);
+            displayClinicalInterpretation(prediction);
             displayFactors(explanation.top_contributing_factors);
             displayRecommendations(prediction.risk_level);
-
-            // Initialize Risk Simulator
             initSimulator();
-
-            // Show chat widget after results are displayed
             showChatWidget();
         }, 300);
-
     }, 1000);
 }
 
 /**
- * Animate risk score display
+ * Animate the HbA1c score display
+ * Maps HbA1c value (3-16%) to the ring/meter
  */
 function animateRiskScore(prediction) {
-    const percentage = prediction.probability_percentage;
+    const hba1c = prediction.predicted_hba1c;
     const riskLevel = prediction.risk_level;
 
-    // Set risk card class
-    elements.riskCard.className = 'risk-card ' + riskLevel.toLowerCase();
+    // Map risk level to CSS class
+    let cssClass = 'low';
+    if (riskLevel === 'HIGH_RISK') cssClass = 'high';
+    else if (riskLevel === 'DIABETIC') cssClass = 'medium';
+    else if (riskLevel === 'PRE_DIABETIC') cssClass = 'medium';
 
-    // Update confidence
+    elements.riskCard.className = 'risk-card ' + cssClass;
     elements.riskConfidence.textContent = prediction.confidence;
 
-    // Animate percentage counter
-    animateCounter(elements.riskPercentage, 0, percentage, 1500);
+    // Animate HbA1c value counter
+    animateCounter(elements.riskPercentage, 0, hba1c, 1500);
 
-    // Animate progress ring
-    const circumference = 2 * Math.PI * 54; // r = 54
-    const offset = circumference - (percentage / 100) * circumference;
+    // Progress ring: map HbA1c 3-16 to 0-100%
+    const normalizedPct = Math.min(((hba1c - 3) / 13) * 100, 100);
+    const circumference = 2 * Math.PI * 54;
+    const offset = circumference - (normalizedPct / 100) * circumference;
 
     setTimeout(() => {
         elements.progressRing.style.strokeDashoffset = offset;
     }, 100);
 
-    // Animate risk level text
+    // Risk level label
+    const labelMap = {
+        'NORMAL': 'NORMOGLYCEMIA',
+        'PRE_DIABETIC': 'PREDIABETES',
+        'DIABETIC': 'DIABETES',
+        'HIGH_RISK': 'HIGH RISK'
+    };
     setTimeout(() => {
-        elements.riskLevel.textContent = riskLevel;
+        elements.riskLevel.textContent = labelMap[riskLevel] || riskLevel;
     }, 500);
 
-    // Animate meter pointer
+    // Meter pointer
     setTimeout(() => {
-        elements.meterPointer.style.left = `${percentage}%`;
+        elements.meterPointer.style.left = `${normalizedPct}%`;
     }, 100);
 }
 
 /**
- * Animate counter from start to end
+ * Clinical interpretation from reference sheet:
+ * outcome_line, response_line, target_line
  */
+function displayClinicalInterpretation(prediction) {
+    const postHbA1c = prediction.predicted_hba1c;
+    const preHbA1c = currentFormData?.PreBLHBA1C || 0;
+    const age = currentFormData?.PostBLAge || 0;
+
+    function getCategory(v) {
+        if (v < 5.7) return 'Normoglycemia';
+        if (v <= 6.4) return 'Prediabetes';
+        return 'Diabetes';
+    }
+
+    const preCat = getCategory(preHbA1c);
+    const postCat = getCategory(postHbA1c);
+    const order = { 'Normoglycemia': 0, 'Prediabetes': 1, 'Diabetes': 2 };
+
+    let traj = 'Persistence';
+    if (order[postCat] < order[preCat]) traj = 'Regression';
+    else if (order[postCat] > order[preCat]) traj = 'Progression';
+
+    const outcomeLine = `Predicted outcome: ${preCat} → ${postCat} (${traj})`;
+
+    // Response classification (baseline Diabetes only)
+    const delta = preHbA1c - postHbA1c; // positive = improvement
+    let responseLine = '';
+    if (preCat === 'Diabetes') {
+        if (delta >= 1.0) responseLine = `Predicted response: Major improvement – Risk reduction achieved (ΔHbA1c ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%)`;
+        else if (delta >= 0.5) responseLine = `Predicted response: Clinically meaningful improvement (ΔHbA1c +${delta.toFixed(2)}%)`;
+        else if (delta >= 0) responseLine = `Predicted response: Stabilization / modest improvement (ΔHbA1c +${delta.toFixed(2)}%)`;
+        else responseLine = `Predicted response: Non-response (ΔHbA1c ${delta.toFixed(2)}%)`;
+    }
+
+    // Target achievement
+    let targetLine = '';
+    if (preCat === 'Diabetes' && preHbA1c > 7.0) {
+        const target = age < 65 ? 7.0 : 7.5;
+        const achieved = postHbA1c <= target ? 'Achieved ✅' : 'Not achieved ❌';
+        targetLine = `Glycemic control target: ≤${target}% (age ${age}) | ${achieved}`;
+    }
+
+    // Update DOM
+    const outEl = document.getElementById('outcomeLine');
+    const resEl = document.getElementById('responseLine');
+    const tgtEl = document.getElementById('targetLine');
+
+    if (outEl) outEl.textContent = outcomeLine;
+    if (resEl) resEl.textContent = responseLine;
+    if (tgtEl) tgtEl.textContent = targetLine;
+}
+
 function animateCounter(element, start, end, duration) {
     const startTime = performance.now();
     const diff = end - start;
@@ -283,44 +296,25 @@ function animateCounter(element, start, end, duration) {
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function (ease-out)
         const easeOut = 1 - Math.pow(1 - progress, 3);
-
         const current = start + diff * easeOut;
         element.textContent = current.toFixed(1);
-
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
+        if (progress < 1) requestAnimationFrame(update);
     }
-
     requestAnimationFrame(update);
 }
 
-/**
- * Display factor cards
- */
 function displayFactors(factors) {
     elements.factorsContainer.innerHTML = '';
-
-    // Find max impact for normalization
     const maxImpact = Math.max(...factors.map(f => Math.abs(f.impact)));
 
     factors.forEach((factor, index) => {
         const card = createFactorCard(factor, maxImpact);
         elements.factorsContainer.appendChild(card);
-
-        // Trigger animation
-        setTimeout(() => {
-            card.classList.add('animate');
-        }, 50);
+        setTimeout(() => { card.classList.add('animate'); }, 50);
     });
 }
 
-/**
- * Create a factor card element
- */
 function createFactorCard(factor, maxImpact) {
     const card = document.createElement('div');
     card.className = 'factor-card';
@@ -344,7 +338,6 @@ function createFactorCard(factor, maxImpact) {
         </div>
     `;
 
-    // Animate bar after card is added
     setTimeout(() => {
         const bar = card.querySelector('.factor-bar-fill');
         bar.style.width = `${normalizedImpact}%`;
@@ -354,41 +347,101 @@ function createFactorCard(factor, maxImpact) {
 }
 
 /**
- * Format feature name for display
+ * Format encoded feature names to human-readable labels
  */
 function formatFeatureName(name) {
-    // Handle common feature name patterns
     const nameMap = {
-        'age': 'Age',
-        'bmi': 'BMI (Body Mass Index)',
-        'avg_glucose_level': 'Average Glucose Level',
-        'hypertension_0': 'No Hypertension',
-        'hypertension_1': 'Has Hypertension',
-        'heart_disease_0': 'No Heart Disease',
-        'heart_disease_1': 'Has Heart Disease',
-        'gender_Male': 'Gender: Male',
-        'gender_Female': 'Gender: Female',
-        'ever_married_Yes': 'Married',
-        'ever_married_No': 'Not Married',
-        'work_type_Private': 'Private Sector Work',
-        'work_type_Self-employed': 'Self-Employed',
-        'work_type_Govt_job': 'Government Job',
-        'work_type_children': 'Children/Student',
-        'work_type_Never_worked': 'Never Worked',
-        'Residence_type_Urban': 'Urban Residence',
-        'Residence_type_Rural': 'Rural Residence',
-        'smoking_status_formerly smoked': 'Former Smoker',
-        'smoking_status_never smoked': 'Never Smoked',
-        'smoking_status_smokes': 'Current Smoker',
-        'smoking_status_Unknown': 'Smoking: Unknown'
+        'PostBLAge': 'Age',
+        'PreRwaist': 'Waist Circumference',
+        'PreRBMI': 'BMI (Body Mass Index)',
+        'PreRsystolicfirst': 'Systolic Blood Pressure',
+        'PreRdiastolicfirst': 'Diastolic Blood Pressure',
+        'PreBLPPBS': 'Post-Prandial Blood Sugar',
+        'PreBLFBS': 'Fasting Blood Sugar',
+        'PreBLHBA1C': 'Pre-Treatment HbA1c',
+        'PreBLCHOLESTEROL': 'Cholesterol',
+        'PreBLTRIGLYCERIDES': 'Triglycerides',
+        'Diabetic_Duration': 'Diabetes Duration',
+        'PreRmildactivityduration': 'Mild Activity Duration',
+        'PreRmoderateduration': 'Moderate Activity Duration',
+        'PreRvigorousduration': 'Vigorous Activity Duration',
+        // One-hot encoded categorical features
+        'PreBLGender_Male': 'Gender: Male',
+        'PreBLGender_Female': 'Gender: Female',
+        'PreRarea_1': 'Urban Area',
+        'PreRarea_2': 'Rural Area',
+        'PreRarea_1.0': 'Urban Area',
+        'PreRarea_2.0': 'Rural Area',
+        'PreRdiafather_0': 'Father: No Diabetes',
+        'PreRdiafather_1': 'Father: Has Diabetes',
+        'PreRdiafather_0.0': 'Father: No Diabetes',
+        'PreRdiafather_1.0': 'Father: Has Diabetes',
+        'PreRdiamother_0': 'Mother: No Diabetes',
+        'PreRdiamother_1': 'Mother: Has Diabetes',
+        'PreRdiamother_0.0': 'Mother: No Diabetes',
+        'PreRdiamother_1.0': 'Mother: Has Diabetes',
+        'PreRdiabrother_0': 'Brother: No Diabetes',
+        'PreRdiabrother_1': 'Brother: Has Diabetes',
+        'PreRdiabrother_0.0': 'Brother: No Diabetes',
+        'PreRdiabrother_1.0': 'Brother: Has Diabetes',
+        'PreRdiasister_0': 'Sister: No Diabetes',
+        'PreRdiasister_1': 'Sister: Has Diabetes',
+        'PreRdiasister_0.0': 'Sister: No Diabetes',
+        'PreRdiasister_1.0': 'Sister: Has Diabetes',
+        'current_smoking_0': 'Non-Smoker',
+        'current_smoking_1': 'Current Smoker',
+        'current_smoking_0.0': 'Non-Smoker',
+        'current_smoking_1.0': 'Current Smoker',
+        'current_alcohol_0': 'No Alcohol',
+        'current_alcohol_1': 'Current Drinker',
+        'current_alcohol_0.0': 'No Alcohol',
+        'current_alcohol_1.0': 'Current Drinker',
+        'PostRgroupname_1': 'Yoga Group',
+        'PostRgroupname_2': 'Control Group',
+        'PostRgroupname_1.0': 'Yoga Group',
+        'PostRgroupname_2.0': 'Control Group',
     };
 
-    return nameMap[name] || name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (nameMap[name]) return nameMap[name];
+
+    // Marital status codes
+    const maritalMap = { '1': 'Married', '1.0': 'Married', '2': 'Unmarried', '2.0': 'Unmarried', '3': 'Divorcee/Separated', '3.0': 'Divorcee/Separated', '4': 'Widow/Widower', '4.0': 'Widow/Widower', '5': 'Others', '5.0': 'Others' };
+    if (name.startsWith('PreRmaritalstatus_')) { const v = name.split('_').pop(); return `Marital: ${maritalMap[v] || v}`; }
+
+    // Education codes
+    const eduMap = { '1': 'No formal schooling', '1.0': 'No formal schooling', '2': 'Primary school', '2.0': 'Primary school', '3': 'High school', '3.0': 'High school', '4': 'Intermediate', '4.0': 'Intermediate', '5': 'University', '5.0': 'University', '6': 'Univ. completed+', '6.0': 'Univ. completed+', '7': 'Others', '7.0': 'Others' };
+    if (name.startsWith('PreReducation_')) { const v = name.split('_').pop(); return `Education: ${eduMap[v] || v}`; }
+
+    // Occupation codes
+    const occMap = { '1': 'Professional/Executive', '1.0': 'Professional/Executive', '2': 'Clerical/Medium business', '2.0': 'Clerical/Medium business', '3': 'Self-employed/Skilled', '3.0': 'Self-employed/Skilled', '4': 'Unskilled laborer', '4.0': 'Unskilled laborer', '5': 'Homemaker', '5.0': 'Homemaker', '6': 'Retired', '6.0': 'Retired', '7': 'Unemployed (able)', '7.0': 'Unemployed (able)', '8': 'Unemployed (unable)', '8.0': 'Unemployed (unable)', '9': 'Others', '9.0': 'Others' };
+    if (name.startsWith('PreRpresentoccupation_')) { const v = name.split('_').pop(); return `Occupation: ${occMap[v] || v}`; }
+
+    // Sleep quality codes
+    const sleepMap = { '1': 'Very good', '1.0': 'Very good', '2': 'Fairly good', '2.0': 'Fairly good', '3': 'Fairly bad', '3.0': 'Fairly bad', '4': 'Very bad', '4.0': 'Very bad' };
+    if (name.startsWith('PreRsleepquality_')) { const v = name.split('_').pop(); return `Sleep: ${sleepMap[v] || v}`; }
+
+    // Activity frequency codes
+    const freqMap = { '0': 'None', '0.0': 'None', '1': 'Once/month', '1.0': 'Once/month', '2': '2-3×/month', '2.0': '2-3×/month', '3': 'Once/week', '3.0': 'Once/week', '4': '2-3×/week', '4.0': '2-3×/week', '5': '4-5×/week', '5.0': '4-5×/week', '6': 'Every day', '6.0': 'Every day' };
+    if (name.startsWith('PreRmoderate_')) { const v = name.split('_').pop(); return `Moderate Activity: ${freqMap[v] || v}`; }
+    if (name.startsWith('PreRvigorous_')) { const v = name.split('_').pop(); return `Vigorous Activity: ${freqMap[v] || v}`; }
+
+    // Duration codes
+    const durMap = { '0': 'None', '0.0': 'None', '1': '≤10 min', '1.0': '≤10 min', '2': '10-30 min', '2.0': '10-30 min', '3': '30min-1hr', '3.0': '30min-1hr', '4': '1-1.5 hrs', '4.0': '1-1.5 hrs', '5': '>1.5 hrs', '5.0': '>1.5 hrs' };
+    if (name.startsWith('PreRmildactivityduration_')) { const v = name.split('_').pop(); return `Mild Activity Duration: ${durMap[v] || v}`; }
+
+    // Diet frequency codes (1=Usually/Often, 2=Sometimes, 3=Rarely/Never)
+    const dietMap = { '1': 'Usually/Often', '1.0': 'Usually/Often', '2': 'Sometimes', '2.0': 'Sometimes', '3': 'Rarely/Never', '3.0': 'Rarely/Never' };
+    if (name.startsWith('PreRskipbreakfast_')) { const v = name.split('_').pop(); return `Skip Breakfast: ${dietMap[v] || v}`; }
+    if (name.startsWith('PreRlessfruit_')) { const v = name.split('_').pop(); return `Low Fruit Intake: ${dietMap[v] || v}`; }
+    if (name.startsWith('PreRlessvegetable_')) { const v = name.split('_').pop(); return `Low Vegetable Intake: ${dietMap[v] || v}`; }
+    if (name.startsWith('PreRmilk_')) { const v = name.split('_').pop(); return `Low Milk/Curd: ${dietMap[v] || v}`; }
+    if (name.startsWith('PreRmeat_')) { const v = name.split('_').pop(); return `High Meat/Fish: ${dietMap[v] || v}`; }
+    if (name.startsWith('PreRfriedfood_')) { const v = name.split('_').pop(); return `Fried Food: ${dietMap[v] || v}`; }
+    if (name.startsWith('PreRsweet_')) { const v = name.split('_').pop(); return `Sweets >2×/day: ${dietMap[v] || v}`; }
+
+    return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
-/**
- * Display recommendations based on risk level
- */
 function displayRecommendations(riskLevel) {
     const recommendations = getRecommendations(riskLevel);
     elements.recommendationsGrid.innerHTML = '';
@@ -396,171 +449,87 @@ function displayRecommendations(riskLevel) {
     recommendations.forEach(rec => {
         const card = document.createElement('div');
         card.className = 'recommendation-card';
-
         card.innerHTML = `
             <div class="recommendation-icon">${rec.icon}</div>
             <h4 class="recommendation-title">${rec.title}</h4>
             <p class="recommendation-text">${rec.text}</p>
         `;
-
         elements.recommendationsGrid.appendChild(card);
     });
 }
 
-/**
- * Get recommendations based on risk level
- */
 function getRecommendations(riskLevel) {
-    const baseRecommendations = [
-        {
-            icon: '🏃',
-            title: 'Regular Exercise',
-            text: 'Aim for 150 minutes of moderate aerobic activity weekly to maintain cardiovascular health.'
-        },
-        {
-            icon: '🥗',
-            title: 'Balanced Diet',
-            text: 'Focus on fruits, vegetables, whole grains, and limit sodium and saturated fats.'
-        }
+    const baseRecs = [
+        { icon: '🧘', title: 'Yoga & Exercise', text: 'Regular yoga and moderate exercise can significantly improve insulin sensitivity and lower HbA1c levels.' },
+        { icon: '🥗', title: 'Balanced Diet', text: 'Focus on low glycemic index foods, whole grains, vegetables, and limit refined sugars and fried foods.' }
     ];
 
-    if (riskLevel === 'HIGH') {
+    if (riskLevel === 'HIGH_RISK') {
         return [
-            {
-                icon: '🏥',
-                title: 'Consult a Doctor',
-                text: 'Schedule an appointment with a healthcare provider for comprehensive evaluation.'
-            },
-            {
-                icon: '📊',
-                title: 'Monitor Vitals',
-                text: 'Regularly track blood pressure, glucose levels, and maintain health records.'
-            },
-            ...baseRecommendations
+            { icon: '🏥', title: 'Consult Endocrinologist', text: 'With high predicted HbA1c, schedule an appointment with a diabetes specialist for comprehensive evaluation.' },
+            { icon: '📊', title: 'Monitor Daily', text: 'Regular blood glucose monitoring is critical. Track FBS and PPBS daily and maintain a health diary.' },
+            { icon: '💊', title: 'Medication Review', text: 'Discuss medication adjustments with your doctor. Doses may need to be optimized for better control.' },
+            ...baseRecs
         ];
-    } else if (riskLevel === 'MEDIUM') {
+    } else if (riskLevel === 'DIABETIC') {
         return [
-            {
-                icon: '📋',
-                title: 'Regular Checkups',
-                text: 'Schedule regular health screenings to monitor your risk factors.'
-            },
-            {
-                icon: '🚭',
-                title: 'Lifestyle Changes',
-                text: 'Consider quitting smoking and reducing alcohol consumption if applicable.'
-            },
-            ...baseRecommendations
+            { icon: '📋', title: 'Regular Checkups', text: 'Schedule HbA1c tests every 3 months to monitor your diabetes management progress.' },
+            { icon: '🚭', title: 'Lifestyle Changes', text: 'Quit smoking, limit alcohol, and maintain consistent sleep patterns for better glucose control.' },
+            ...baseRecs
+        ];
+    } else if (riskLevel === 'PRE_DIABETIC') {
+        return [
+            { icon: '⚠️', title: 'Early Action', text: 'Pre-diabetic levels can be reversed with lifestyle changes. Act now to prevent progression to diabetes.' },
+            { icon: '🏃', title: 'Increase Activity', text: 'Aim for 150 minutes of moderate activity per week. Even walking 30 minutes daily helps significantly.' },
+            ...baseRecs
         ];
     } else {
         return [
-            {
-                icon: '✅',
-                title: 'Keep It Up!',
-                text: 'Continue maintaining your healthy lifestyle and regular health practices.'
-            },
-            {
-                icon: '🧘',
-                title: 'Stress Management',
-                text: 'Practice mindfulness and stress-reduction techniques for overall wellness.'
-            },
-            ...baseRecommendations
+            { icon: '✅', title: 'Keep It Up!', text: 'Your predicted HbA1c is in the normal range. Continue maintaining your healthy lifestyle!' },
+            { icon: '🧘', title: 'Stay Active', text: 'Continue regular physical activity and yoga practice to maintain your excellent glucose control.' },
+            ...baseRecs
         ];
     }
 }
 
-/**
- * Show/hide loading overlay
- */
 function showLoading(show) {
-    if (show) {
-        elements.loadingOverlay.classList.add('active');
-    } else {
-        elements.loadingOverlay.classList.remove('active');
-    }
+    if (show) elements.loadingOverlay.classList.add('active');
+    else elements.loadingOverlay.classList.remove('active');
 }
 
-/**
- * Show form and hide results
- */
 function showForm() {
     elements.resultsSection.classList.add('hidden');
     elements.assessmentForm.classList.remove('hidden');
-
-    // Reset form
     elements.patientForm.reset();
-
-    // Reset What-If state
     resetWhatIf();
-
-    // Hide chat widget
     hideChatWidget();
-
-    // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/**
- * Show notification toast
- */
 function showNotification(message, type = 'info') {
-    // Remove existing notifications
     const existing = document.querySelector('.notification');
-    if (existing) {
-        existing.remove();
-    }
+    if (existing) existing.remove();
 
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
         <span class="notification-message">${message}</span>
         <button class="notification-close">&times;</button>
     `;
-
-    // Add styles dynamically
     notification.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
         background: ${type === 'error' ? '#E85D4C' : type === 'warning' ? '#FF9800' : '#2D9596'};
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 10000;
-        max-width: 90%;
+        color: white; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center;
+        gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; max-width: 90%;
         animation: slideUp 0.3s ease;
     `;
 
-    // Add animation keyframes
     const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-    `;
+    style.textContent = `@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`;
     document.head.appendChild(style);
-
     document.body.appendChild(notification);
 
-    // Close button handler
-    notification.querySelector('.notification-close').addEventListener('click', () => {
-        notification.remove();
-    });
-
-    // Auto-dismiss after 5 seconds
+    notification.querySelector('.notification-close').addEventListener('click', () => notification.remove());
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(-50%) translateY(20px)';
@@ -569,33 +538,57 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
-/**
- * Demo mode - fill form with sample data
- */
 function fillDemoData() {
-    document.getElementById('gender').value = 'Male';
-    document.getElementById('age').value = '67';
-    document.getElementById('hypertension').checked = false;
-    document.getElementById('heart_disease').checked = true;
-    document.getElementById('married_yes').checked = true;
-    document.getElementById('urban').checked = true;
-    document.getElementById('avg_glucose_level').value = '228.69';
-    document.getElementById('bmi').value = '36.6';
-    document.getElementById('work_type').value = 'Private';
-    document.getElementById('smoking_status').value = 'formerly smoked';
+    // Gender - radio
+    document.getElementById('gender_male').checked = true;
+    document.getElementById('PostBLAge').value = '55';
+    // Area - radio
+    document.getElementById('area_urban').checked = true;
+    document.getElementById('PreRmaritalstatus').value = '1';
+    document.getElementById('PreReducation').value = '4';
+    document.getElementById('PreRpresentoccupation').value = '3';
+    // Family history - radio groups
+    document.getElementById('diafather_yes').checked = true;
+    document.getElementById('diamother_no').checked = true;
+    document.getElementById('diabrother_no').checked = true;
+    document.getElementById('diasister_no').checked = true;
+    // Smoking/alcohol - radio groups
+    document.getElementById('smoking_no').checked = true;
+    document.getElementById('alcohol_no').checked = true;
+    document.getElementById('PreRsleepquality').value = '2';
+    // Care plan - select dropdown
+    document.getElementById('PostRgroupname').value = '1';
+    document.getElementById('PreRmildactivityduration').value = '3';
+    document.getElementById('PreRmoderate').value = '2';
+    document.getElementById('PreRmoderateduration').value = '2';
+    document.getElementById('PreRvigorous').value = '1';
+    document.getElementById('PreRvigorousduration').value = '1';
+    document.getElementById('PreRskipbreakfast').value = '2';
+    document.getElementById('PreRlessfruit').value = '2';
+    document.getElementById('PreRlessvegetable').value = '2';
+    document.getElementById('PreRmilk').value = '2';
+    document.getElementById('PreRmeat').value = '2';
+    document.getElementById('PreRfriedfood').value = '2';
+    document.getElementById('PreRsweet').value = '2';
+    document.getElementById('PreRwaist').value = '92';
+    document.getElementById('PreRBMI').value = '27.5';
+    document.getElementById('PreRsystolicfirst').value = '130';
+    document.getElementById('PreRdiastolicfirst').value = '84';
+    document.getElementById('PreBLPPBS').value = '220';
+    document.getElementById('PreBLFBS').value = '140';
+    document.getElementById('PreBLHBA1C').value = '8.2';
+    document.getElementById('PreBLCHOLESTEROL').value = '210';
+    document.getElementById('PreBLTRIGLYCERIDES').value = '180';
+    document.getElementById('Diabetic_Duration').value = '5';
+    showNotification('Demo data filled! Click Predict HbA1c to see results.', 'info');
 }
 
-/**
- * =============================================
- * WHAT-IF SCENARIO ANALYSIS
- * =============================================
- */
 
-/**
- * Fetch What-If analysis from API
- */
+// =============================================
+// WHAT-IF SCENARIO ANALYSIS
+// =============================================
+
 async function fetchWhatIfAnalysis(formData) {
-    // Show the What-If section with loading state
     elements.whatifSection.style.display = 'block';
     elements.whatifLoading.style.display = 'flex';
     elements.whatifScenariosGrid.innerHTML = '';
@@ -607,85 +600,60 @@ async function fetchWhatIfAnalysis(formData) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const whatifData = await response.json();
         currentWhatIf = whatifData;
-
-        // Hide loading, display results
         elements.whatifLoading.style.display = 'none';
         displayWhatIfAnalysis(whatifData);
-
     } catch (error) {
         console.error('What-If API Error:', error);
         elements.whatifLoading.style.display = 'none';
         elements.whatifScenariosGrid.innerHTML = `
-            <div class="whatif-error">
-                <p>⚠️ Could not generate What-If scenarios. The analysis will still work without this feature.</p>
-            </div>
+            <div class="whatif-error"><p>⚠️ Could not generate What-If scenarios.</p></div>
         `;
     }
 }
 
-/**
- * Display What-If analysis results
- */
 function displayWhatIfAnalysis(data) {
     if (!data.scenarios || data.scenarios.length === 0) {
         elements.whatifScenariosGrid.innerHTML = `
-            <div class="whatif-empty">
-                <p>✅ Your current health parameters are already in healthy ranges. No significant changes to suggest!</p>
-            </div>
+            <div class="whatif-empty"><p>✅ Your current health parameters are already in healthy ranges!</p></div>
         `;
         return;
     }
 
-    // Render scenario cards with staggered animation
     data.scenarios.forEach((scenario, index) => {
         const card = createScenarioCard(scenario);
         elements.whatifScenariosGrid.appendChild(card);
-
-        // Staggered fade-in animation
-        setTimeout(() => {
-            card.classList.add('animate');
-        }, 100 + index * 150);
+        setTimeout(() => { card.classList.add('animate'); }, 100 + index * 150);
     });
 
-    // Show combined outcome if available
-    if (data.combined_risk !== null && data.combined_risk !== undefined && data.scenarios.length > 1) {
+    if (data.combined_hba1c !== null && data.combined_hba1c !== undefined && data.scenarios.length > 1) {
         setTimeout(() => {
             displayCombinedOutcome(data);
         }, 100 + data.scenarios.length * 150 + 200);
     }
 }
 
-/**
- * Create a single scenario card
- */
 function createScenarioCard(scenario) {
     const card = document.createElement('div');
     card.className = 'whatif-card';
 
-    const isReduction = scenario.risk_delta > 0;
-    const deltaAbs = Math.abs(scenario.risk_delta).toFixed(1);
-    const reductionPct = Math.abs(scenario.risk_reduction_percent).toFixed(1);
-
-    // Determine the bar width (scale delta to percentage of original risk for visualization)
-    const barWidth = Math.min(Math.abs(scenario.risk_reduction_percent), 100);
+    const isReduction = scenario.hba1c_delta > 0;
+    const deltaAbs = Math.abs(scenario.hba1c_delta).toFixed(2);
+    const improvePct = Math.abs(scenario.improvement_percent).toFixed(1);
+    const barWidth = Math.min(Math.abs(scenario.improvement_percent), 100);
 
     card.innerHTML = `
         <div class="whatif-card-icon">${scenario.icon}</div>
         <div class="whatif-card-content">
             <h4 class="whatif-card-title">${scenario.title}</h4>
             <p class="whatif-card-desc">${scenario.description}</p>
-            
             <div class="whatif-card-comparison">
                 <div class="whatif-risk-original">
                     <span class="whatif-risk-label">Current</span>
-                    <span class="whatif-risk-val">${scenario.original_risk.toFixed(1)}%</span>
+                    <span class="whatif-risk-val">${scenario.original_hba1c.toFixed(2)}%</span>
                 </div>
                 <div class="whatif-arrow-container">
                     <svg class="whatif-arrow ${isReduction ? 'reduction' : 'increase'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -694,71 +662,55 @@ function createScenarioCard(scenario) {
                 </div>
                 <div class="whatif-risk-modified">
                     <span class="whatif-risk-label">Modified</span>
-                    <span class="whatif-risk-val ${isReduction ? 'improved' : 'worsened'}">${scenario.modified_risk.toFixed(1)}%</span>
+                    <span class="whatif-risk-val ${isReduction ? 'improved' : 'worsened'}">${scenario.modified_hba1c.toFixed(2)}%</span>
                 </div>
             </div>
-            
             <div class="whatif-delta-bar">
                 <div class="whatif-delta-fill ${isReduction ? 'positive' : 'negative'}" 
                      style="width: 0%" data-width="${barWidth}%"></div>
             </div>
-            
             <div class="whatif-delta-text ${isReduction ? 'positive' : 'negative'}">
-                ${isReduction ? '↓' : '↑'} ${deltaAbs}% risk ${isReduction ? 'reduction' : 'increase'}
-                <span class="whatif-delta-pct">(${reductionPct}% ${isReduction ? 'improvement' : 'change'})</span>
+                ${isReduction ? '↓' : '↑'} ${deltaAbs} HbA1c ${isReduction ? 'reduction' : 'increase'}
+                <span class="whatif-delta-pct">(${improvePct}% ${isReduction ? 'improvement' : 'change'})</span>
             </div>
         </div>
     `;
 
-    // Animate the delta bar after card is rendered
     setTimeout(() => {
         const bar = card.querySelector('.whatif-delta-fill');
-        if (bar) {
-            bar.style.width = `${barWidth}%`;
-        }
+        if (bar) bar.style.width = `${barWidth}%`;
     }, 500);
 
     return card;
 }
 
-/**
- * Display combined best-case outcome card
- */
 function displayCombinedOutcome(data) {
     elements.whatifCombinedCard.style.display = 'block';
 
-    const originalRisk = data.original_risk;
-    const combinedRisk = data.combined_risk;
-    const totalDelta = originalRisk - combinedRisk;
-    const totalReductionPct = originalRisk > 0 ? (totalDelta / originalRisk * 100) : 0;
+    const originalHba1c = data.original_hba1c;
+    const combinedHba1c = data.combined_hba1c;
+    const totalDelta = originalHba1c - combinedHba1c;
+    const totalImprovePct = originalHba1c > 0 ? (totalDelta / originalHba1c * 100) : 0;
 
-    elements.combinedOriginalRisk.textContent = `${originalRisk.toFixed(1)}%`;
-    elements.combinedModifiedRisk.textContent = `${combinedRisk.toFixed(1)}%`;
+    elements.combinedOriginalRisk.textContent = `${originalHba1c.toFixed(2)}%`;
+    elements.combinedModifiedRisk.textContent = `${combinedHba1c.toFixed(2)}%`;
 
-    // Color the modified risk value
-    if (combinedRisk < originalRisk) {
+    if (combinedHba1c < originalHba1c) {
         elements.combinedModifiedRisk.classList.add('improved');
     }
 
-    // Delta summary
     const isReduction = totalDelta > 0;
     elements.combinedDelta.innerHTML = `
         <div class="combined-delta-badge ${isReduction ? 'positive' : 'negative'}">
-            ${isReduction ? '↓' : '↑'} ${Math.abs(totalDelta).toFixed(1)}% total risk ${isReduction ? 'reduction' : 'increase'}
-            <span>(${Math.abs(totalReductionPct).toFixed(1)}% overall ${isReduction ? 'improvement' : 'change'})</span>
+            ${isReduction ? '↓' : '↑'} ${Math.abs(totalDelta).toFixed(2)} total HbA1c ${isReduction ? 'reduction' : 'increase'}
+            <span>(${Math.abs(totalImprovePct).toFixed(1)}% overall ${isReduction ? 'improvement' : 'change'})</span>
         </div>
         <p class="combined-risk-level">Risk Level: <strong>${data.original_risk_level}</strong> → <strong class="${(data.combined_risk_level || '').toLowerCase()}">${data.combined_risk_level || 'N/A'}</strong></p>
     `;
 
-    // Animate in
-    setTimeout(() => {
-        elements.whatifCombinedCard.classList.add('animate');
-    }, 100);
+    setTimeout(() => { elements.whatifCombinedCard.classList.add('animate'); }, 100);
 }
 
-/**
- * Reset What-If section state
- */
 function resetWhatIf() {
     currentWhatIf = null;
     elements.whatifSection.style.display = 'none';
@@ -768,37 +720,26 @@ function resetWhatIf() {
     elements.combinedModifiedRisk.classList.remove('improved');
 }
 
-/**
- * =============================================
- * INTERACTIVE RISK SIMULATOR
- * =============================================
- */
+
+// =============================================
+// INTERACTIVE RISK SIMULATOR
+// =============================================
 
 let simTimeout = null;
 
 function initSimulator() {
     if (!currentFormData || !currentPrediction) return;
 
-    // Show the simulator section
     const simCard = document.getElementById('interactiveSimulator');
     if (simCard) simCard.classList.remove('hidden');
 
-    // Populate baseline stats
-    const baselineRiskStr = currentPrediction.probability_percentage.toFixed(1) + '%';
-    document.getElementById('simBaselineStat').textContent = baselineRiskStr;
-
-    // Initial UI update with baseline data
+    document.getElementById('simBaselineStat').textContent = currentPrediction.predicted_hba1c.toFixed(2) + '%';
     updateSimulatorUI(currentPrediction, currentPrediction, currentFormData);
 
-    // Setup Event Listeners
-    setupSimControl('Age', 'age', 20, 100);
-    setupSimControl('Bmi', 'bmi', 15, 60);
-    setupSimControl('Glucose', 'avg_glucose_level', 50, 300);
-
-    // Toggle Setup
-    const toggle = document.getElementById('simSmokerToggle');
-    toggle.checked = (currentFormData.smoking_status === 'smokes' || currentFormData.smoking_status === 'formerly smoked');
-    toggle.onchange = () => { triggerSimulate(); };
+    setupSimControl('Bmi', 'PreRBMI', 15, 60);
+    setupSimControl('Fbs', 'PreBLFBS', 50, 400);
+    setupSimControl('Hba1c', 'PreBLHBA1C', 3, 16);
+    setupSimControl('Bp', 'PreRsystolicfirst', 80, 220);
 }
 
 function setupSimControl(idPrefix, fieldName, min, max) {
@@ -823,28 +764,17 @@ function setupSimControl(idPrefix, fieldName, min, max) {
 
 function triggerSimulate() {
     clearTimeout(simTimeout);
-    simTimeout = setTimeout(simulateRisk, 300); // 300ms debounce
+    simTimeout = setTimeout(simulateRisk, 300);
 }
 
 async function simulateRisk() {
     if (!currentFormData) return;
 
-    // Create new patient data object
     const simulatedData = { ...currentFormData };
-
-    // Override with simulator values
-    simulatedData.age = parseFloat(document.getElementById('simAgeNum').value);
-    simulatedData.bmi = parseFloat(document.getElementById('simBmiNum').value);
-    simulatedData.avg_glucose_level = parseFloat(document.getElementById('simGlucoseNum').value);
-
-    const isSmoker = document.getElementById('simSmokerToggle').checked;
-
-    // Map simplified toggle back to model categories
-    if (isSmoker) {
-        simulatedData.smoking_status = 'smokes';
-    } else {
-        simulatedData.smoking_status = 'never smoked';
-    }
+    simulatedData.PreRBMI = parseFloat(document.getElementById('simBmiNum').value);
+    simulatedData.PreBLFBS = parseFloat(document.getElementById('simFbsNum').value);
+    simulatedData.PreBLHBA1C = parseFloat(document.getElementById('simHba1cNum').value);
+    simulatedData.PreRsystolicfirst = parseFloat(document.getElementById('simBpNum').value);
 
     try {
         const response = await fetchPrediction(simulatedData);
@@ -855,43 +785,40 @@ async function simulateRisk() {
 }
 
 function updateSimulatorUI(baselinePred, targetPred, simData) {
-    const risk = targetPred.probability_percentage;
-    const levelStr = targetPred.risk_level.toUpperCase();
+    const hba1c = targetPred.predicted_hba1c;
+    const levelStr = targetPred.risk_level.replace('_', ' ').toUpperCase();
 
-    // Text values
-    document.getElementById('simRiskValue').textContent = risk.toFixed(1) + '%';
-    document.getElementById('simRiskLabel').textContent = levelStr + ' RISK';
-    document.getElementById('simTargetStat').textContent = risk.toFixed(1) + '%';
+    document.getElementById('simRiskValue').textContent = hba1c.toFixed(2) + '%';
+    document.getElementById('simRiskLabel').textContent = levelStr;
+    document.getElementById('simTargetStat').textContent = hba1c.toFixed(2) + '%';
 
-    // Delta
-    const delta = (risk - baselinePred.probability_percentage).toFixed(1);
+    const delta = (hba1c - baselinePred.predicted_hba1c).toFixed(2);
     const deltaEl = document.getElementById('simDeltaStat');
-    deltaEl.textContent = (delta > 0 ? '+' : '') + delta + '%';
+    deltaEl.textContent = (delta > 0 ? '+' : '') + delta;
     deltaEl.className = 'sim-stat-val ' + (delta > 0 ? 'negative' : (delta < 0 ? 'positive' : ''));
 
-    // Dynamic Arc length = 219.91
-    const trackFilled = 219.91 * (1 - (risk / 100)); // risk mapped as 0-100%
+    // Map HbA1c 3-16 to arc
+    const normalized = Math.min(((hba1c - 3) / 13) * 100, 100);
+    const trackFilled = 219.91 * (1 - (normalized / 100));
     const simTrack = document.getElementById('simTrack');
     if (simTrack) {
         simTrack.style.strokeDashoffset = trackFilled;
-
-        // Color
         let color = 'var(--risk-low)';
-        if (targetPred.risk_level === 'MEDIUM') color = 'var(--risk-medium)';
-        if (targetPred.risk_level === 'HIGH') color = 'var(--risk-high)';
+        if (targetPred.risk_level === 'PRE_DIABETIC' || targetPred.risk_level === 'DIABETIC') color = 'var(--risk-medium)';
+        if (targetPred.risk_level === 'HIGH_RISK') color = 'var(--risk-high)';
         simTrack.style.stroke = color;
     }
 
-    // Baseline Marker (Angle 0 is left, angle 180 is right)
-    const baseRisk = baselinePred.probability_percentage;
-    const baseAngle = 180 * (baseRisk / 100);
+    // Baseline marker
+    const baseNorm = Math.min(((baselinePred.predicted_hba1c - 3) / 13) * 100, 100);
+    const baseAngle = 180 * (baseNorm / 100);
     const baseGroup = document.getElementById('simBaselineGroup');
     const baseTextGroup = document.getElementById('simBaselineTextGroup');
     if (baseGroup) baseGroup.style.transform = `rotate(${baseAngle}deg)`;
     if (baseTextGroup) baseTextGroup.style.transform = `translate(18px, 90px) rotate(${-baseAngle}deg)`;
 
-    // Target Marker
-    const targetAngle = 180 * (risk / 100);
+    // Target marker
+    const targetAngle = 180 * (normalized / 100);
     const targetGroup = document.getElementById('simTargetGroup');
     const targetTextGroup = document.getElementById('simTargetTextGroup');
     if (targetGroup) targetGroup.style.transform = `rotate(${targetAngle}deg)`;
@@ -899,11 +826,9 @@ function updateSimulatorUI(baselinePred, targetPred, simData) {
 }
 
 
-/**
- * =============================================
- * AI CHAT FUNCTIONALITY
- * =============================================
- */
+// =============================================
+// AI CHAT FUNCTIONALITY
+// =============================================
 
 let chatSessionId = null;
 let chatIsOpen = false;
@@ -928,10 +853,7 @@ function initChatElements() {
     chatElems.minimize.addEventListener('click', toggleChat);
     chatElems.send.addEventListener('click', sendChatMessage);
     chatElems.input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
     });
     chatElems.input.addEventListener('input', () => {
         chatElems.send.disabled = !chatElems.input.value.trim();
@@ -961,12 +883,8 @@ function toggleChat() {
     chatElems.iconOpen.style.display = chatIsOpen ? 'none' : 'block';
     chatElems.iconClose.style.display = chatIsOpen ? 'block' : 'none';
 
-    if (chatIsOpen && !chatInitialized) {
-        initializeChat();
-    }
-    if (chatIsOpen) {
-        chatElems.input.focus();
-    }
+    if (chatIsOpen && !chatInitialized) initializeChat();
+    if (chatIsOpen) chatElems.input.focus();
 }
 
 async function initializeChat() {
@@ -987,22 +905,17 @@ async function initializeChat() {
                 whatif: currentWhatIf || {}
             })
         });
-
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
         chatSessionId = data.session_id;
-
         removeTypingIndicator();
         addChatMessage('ai', data.message);
         setChatStatus('Online');
-
     } catch (error) {
         console.error('Chat init error:', error);
         removeTypingIndicator();
-        addChatMessage('system',
-            '⚠️ Could not connect to CardioSense AI. Make sure NVIDIA_API_KEY is set and agno is installed.'
-        );
+        addChatMessage('system', '⚠️ Could not connect to DiabeSense AI. Make sure NVIDIA_API_KEY is set and agno is installed.');
         setChatStatus('Offline');
     }
 }
@@ -1014,7 +927,6 @@ async function sendChatMessage() {
     addChatMessage('user', message);
     chatElems.input.value = '';
     chatElems.send.disabled = true;
-
     addTypingIndicator();
     setChatStatus('Thinking...');
 
@@ -1022,19 +934,14 @@ async function sendChatMessage() {
         const response = await fetch(`${API_BASE_URL}/chat/message`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: chatSessionId,
-                message: message
-            })
+            body: JSON.stringify({ session_id: chatSessionId, message: message })
         });
-
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
         removeTypingIndicator();
         addChatMessage('ai', data.response);
         setChatStatus('Online');
-
     } catch (error) {
         console.error('Chat error:', error);
         removeTypingIndicator();
@@ -1046,11 +953,9 @@ async function sendChatMessage() {
 function addChatMessage(type, text) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `chat-msg chat-msg-${type}`;
-
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
     bubble.innerHTML = formatChatMarkdown(text);
-
     msgDiv.appendChild(bubble);
     chatElems.messages.appendChild(msgDiv);
     chatElems.messages.scrollTop = chatElems.messages.scrollHeight;
@@ -1061,13 +966,7 @@ function addTypingIndicator() {
     const indicator = document.createElement('div');
     indicator.id = 'chatTyping';
     indicator.className = 'chat-msg chat-msg-ai';
-    indicator.innerHTML = `
-        <div class="chat-bubble typing-indicator">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-        </div>
-    `;
+    indicator.innerHTML = `<div class="chat-bubble typing-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
     chatElems.messages.appendChild(indicator);
     chatElems.messages.scrollTop = chatElems.messages.scrollHeight;
 }
@@ -1078,17 +977,13 @@ function removeTypingIndicator() {
 }
 
 function setChatStatus(text) {
-    if (chatElems.status) {
-        chatElems.status.innerHTML = `<span class="status-dot"></span> ${text}`;
-    }
+    if (chatElems.status) chatElems.status.innerHTML = `<span class="status-dot"></span> ${text}`;
 }
 
 function formatChatMarkdown(text) {
     if (!text) return '';
     return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
         .replace(/`(.+?)`/g, '<code>$1</code>')
@@ -1097,9 +992,5 @@ function formatChatMarkdown(text) {
         .replace(/\n/g, '<br>');
 }
 
-
-// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', init);
-
-// Expose demo function globally for testing
 window.fillDemoData = fillDemoData;

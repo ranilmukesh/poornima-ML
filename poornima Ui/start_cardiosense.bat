@@ -1,9 +1,9 @@
 @echo off
-title CardioSense+ Launcher
+title DiabeSense+ Launcher
 color 0A
 
 echo ============================================================
-echo             CardioSense+ - AI Stroke Risk Predictor
+echo          DiabeSense+ - AI Diabetes HbA1c Predictor
 echo ============================================================
 echo.
 
@@ -17,7 +17,7 @@ if errorlevel 1 (
 )
 
 echo [1/6] Installing/Updating dependencies...
-pip install pandas numpy scikit-learn xgboost shap fastapi uvicorn joblib imbalanced-learn pydantic agno sqlalchemy --quiet
+pip install pandas numpy scikit-learn xgboost shap fastapi uvicorn joblib imbalanced-learn pydantic agno sqlalchemy python-dotenv --quiet
 if errorlevel 1 (
     echo [WARNING] Some packages may have failed to install.
 ) else (
@@ -27,33 +27,35 @@ echo.
 
 :: ALWAYS delete existing model artifacts to prevent version mismatch issues
 echo [2/6] Cleaning old model artifacts...
-if exist "cardiosense_artifacts.pkl" (
-    del /f /q "cardiosense_artifacts.pkl"
+if exist "diabesense_artifacts.pkl" (
+    del /f /q "diabesense_artifacts.pkl"
     echo       Old artifacts deleted!
 ) else (
     echo       No old artifacts found.
+)
+:: Also clean legacy CardioSense artifacts if present
+if exist "cardiosense_artifacts.pkl" (
+    del /f /q "cardiosense_artifacts.pkl"
+    echo       Legacy CardioSense artifacts removed.
 )
 echo.
 
 :: Set Nvidia API Key for AI Chat feature (permanent + session)
 echo [3/6] Setting up AI Chat credentials...
-:: setx writes to Windows registry - all new processes (incl uvicorn subprocesses) inherit it
 setx NVIDIA_API_KEY "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" >nul 2>&1
-:: set covers the current session immediately (setx only takes effect on NEW windows)
 set NVIDIA_API_KEY=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
-:: Also write a .env file so python-dotenv can load it as a fallback
 echo NVIDIA_API_KEY=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> .env
 echo       NVIDIA_API_KEY configured (permanent + session + .env)!
 echo.
 
 :: ALWAYS train the model fresh to ensure compatibility with current Python packages
-echo [4/6] Training model with current environment...
-echo       This ensures compatibility with your Python package versions.
+echo [4/6] Training DiabeSense+ model with current environment...
+echo       This merges all 4 diabetes CSV datasets and trains XGBRegressor.
 echo.
 python train_model.py
 if errorlevel 1 (
     echo [ERROR] Model training failed!
-    echo Please check if the dataset file exists: healthcare-dataset-stroke-data.csv
+    echo Please check if all 4 diabetes CSV dataset files exist in this folder.
     pause
     exit /b 1
 )
@@ -61,14 +63,13 @@ echo       Model trained successfully!
 echo.
 
 echo [5/6] Starting API Server on http://127.0.0.1:8000 ...
-:: No --reload: avoids uvicorn spawning a watchfiles subprocess that loses env vars on Windows
-start "CardioSense+ API" cmd /k "title CardioSense+ API Server && color 0B && set NVIDIA_API_KEY=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 && python -m uvicorn main:app --host 127.0.0.1 --port 8000"
+start "DiabeSense+ API" cmd /k "title DiabeSense+ API Server && color 0B && set NVIDIA_API_KEY=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 && python -m uvicorn main:app --host 127.0.0.1 --port 8000"
 timeout /t 5 /nobreak >nul
 echo       API Server started!
 echo.
 
 echo [6/6] Starting Frontend Server on http://127.0.0.1:3000 ...
-start "CardioSense+ Frontend" cmd /k "title CardioSense+ Frontend && color 0E && python -m http.server 3000"
+start "DiabeSense+ Frontend" cmd /k "title DiabeSense+ Frontend && color 0E && python -m http.server 3000"
 timeout /t 2 /nobreak >nul
 echo       Frontend Server started!
 echo.
@@ -87,7 +88,7 @@ echo ============================================================
 echo.
 
 :: Open the frontend in default browser
-echo Opening CardioSense+ in your browser...
+echo Opening DiabeSense+ in your browser...
 timeout /t 2 /nobreak >nul
 start http://127.0.0.1:3000
 
