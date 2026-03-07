@@ -83,6 +83,46 @@
             <div class="section-header">
                 <h2 class="section-title">Patient Assessment</h2>
                 <p class="section-subtitle">Enter health parameters for diabetes HbA1c prediction</p>
+                <div style="display:flex;gap:10px;margin-top:12px;justify-content:center;flex-wrap:wrap;">
+                    <button type="button" onclick="openJsonModal()"
+                        style="background:linear-gradient(135deg,#2D9596,#1a6b6c);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
+                        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📋
+                        Load JSON</button>
+                    <button type="button" onclick="fillDemoData()"
+                        style="background:linear-gradient(135deg,#E85D4C,#c14438);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
+                        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🎲
+                        Demo Data</button>
+                </div>
+            </div>
+
+            <!-- JSON Import Modal -->
+            <div id="jsonModal"
+                style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center;">
+                <div
+                    style="background:var(--dark-800,#1a1a2e);border-radius:16px;padding:28px;max-width:560px;width:90%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="color:var(--cream,#f5f0e8);margin:0;font-size:1.1rem;">📋 Import Patient JSON</h3>
+                        <button onclick="closeJsonModal()"
+                            style="background:none;border:none;color:var(--gray-400,#999);font-size:1.4rem;cursor:pointer;">&times;</button>
+                    </div>
+                    <textarea id="jsonInput" placeholder='Paste JSON here, e.g.:
+{
+  "PostBLAge": 55,
+  "PreBLGender": "Male",
+  "PreRarea": 1,
+  "PreBLHBA1C": 8.2,
+  "PreBLFBS": 140,
+  "PreRBMI": 27.5,
+  ...
+}' style="width:100%;height:220px;background:var(--dark-900,#0f0f1a);color:var(--cream,#f5f0e8);border:1px solid var(--gray-700,#333);border-radius:10px;padding:14px;font-family:'Fira Code',monospace;font-size:0.82rem;resize:vertical;box-sizing:border-box;"></textarea>
+                    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;">
+                        <button onclick="closeJsonModal()"
+                            style="background:var(--gray-700,#333);color:var(--cream,#f5f0e8);border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;">Cancel</button>
+                        <button onclick="applyJsonFromModal()"
+                            style="background:linear-gradient(135deg,#2D9596,#1a6b6c);color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;">Apply
+                            & Fill Form</button>
+                    </div>
+                </div>
             </div>
 
             <form id="patientForm" class="patient-form">
@@ -760,6 +800,26 @@
                             <span class="sim-control-lbl">SBP (mmHg)</span>
                             <input type="range" id="simBpSlider" min="70" max="250" step="1" class="sim-slider">
                             <input type="number" id="simBpNum" class="sim-num-input">
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">PPBS (mg/dL)</span>
+                            <input type="range" id="simPpbsSlider" min="70" max="600" step="1" class="sim-slider">
+                            <input type="number" id="simPpbsNum" min="70" max="600" step="1" class="sim-num-input">
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">Cholesterol</span>
+                            <input type="range" id="simCholSlider" min="80" max="400" step="1" class="sim-slider">
+                            <input type="number" id="simCholNum" min="80" max="400" step="1" class="sim-num-input">
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">Triglycerides</span>
+                            <input type="range" id="simTrigSlider" min="50" max="1000" step="1" class="sim-slider">
+                            <input type="number" id="simTrigNum" min="50" max="1000" step="1" class="sim-num-input">
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">Waist (cm)</span>
+                            <input type="range" id="simWaistSlider" min="50" max="150" step="0.1" class="sim-slider">
+                            <input type="number" id="simWaistNum" min="50" max="150" step="0.1" class="sim-num-input">
                         </div>
                     </div>
                     <div class="sim-disclaimer">AI-generated, may include mistakes. Don't enter sensitive personal info.

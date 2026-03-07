@@ -275,6 +275,37 @@ def get_feature_names_after_encoding(preprocessor) -> list:
     return list(NUMERIC_FEATURES) + list(ohe_names)
 
 
+INTERACTION_PAIRS = [
+    # (groupname OHE column prefix, clinical feature, output name)
+    ('PostRgroupname', 'PreBLHBA1C', 'group_x_hba1c'),
+    ('PostRgroupname', 'PreBLFBS',   'group_x_fbs'),
+    ('PostRgroupname', 'PreBLPPBS',  'group_x_ppbs'),
+]
+
+
+def create_interaction_features(df: pd.DataFrame, feature_names: list) -> tuple:
+    """
+    Create interaction features between PostRgroupname and key clinical markers.
+    This forces the model to learn how the care plan modulates outcomes.
+    Returns: (augmented_df, updated_feature_names)
+    """
+    new_cols = []
+    for group_prefix, clinical_feat, out_name in INTERACTION_PAIRS:
+        # Find all OHE columns for PostRgroupname
+        group_cols = [c for c in feature_names if c.startswith(f'cat__{group_prefix}') or c.startswith(group_prefix)]
+        if not group_cols or clinical_feat not in feature_names:
+            continue
+        # Use the first group column (binary indicator) multiplied by clinical value
+        for gc in group_cols:
+            suffix = gc.split('_')[-1]  # e.g. '1' or '2'
+            col_name = f"{out_name}_{suffix}"
+            df[col_name] = df[gc].values * df[clinical_feat].values
+            new_cols.append(col_name)
+
+    updated_names = list(feature_names) + new_cols
+    return df, updated_names
+
+
 # ============================================================================
 # MODEL TRAINING: STACKING ENSEMBLE
 # ============================================================================
@@ -455,7 +486,19 @@ def main():
     X_train_df = pd.DataFrame(X_train_processed, columns=feature_names)
     X_test_df = pd.DataFrame(X_test_processed, columns=feature_names)
 
-    # Step 7: Train Stacking Ensemble + standalone XGB for SHAP
+    # Step 7a: Create interaction features (PostRgroupname × clinical markers)
+    print("\n[*] Creating PostRgroupname interaction features...")
+    base_feature_names = list(feature_names)  # save before augmentation
+    X_train_df, feature_names = create_interaction_features(X_train_df, base_feature_names)
+    X_test_df, _ = create_interaction_features(X_test_df, base_feature_names)
+    # Ensure test has same columns as train
+    for col in feature_names:
+        if col not in X_test_df.columns:
+            X_test_df[col] = 0.0
+    X_test_df = X_test_df[feature_names]  # reorder to match
+    print(f"    Total features after interactions: {len(feature_names)}")
+
+    # Step 8: Train Stacking Ensemble + standalone XGB for SHAP
     stack_model, xgb_shap_model = train_stacking_ensemble(X_train_df, y_train)
 
     # Step 8: Evaluate both models

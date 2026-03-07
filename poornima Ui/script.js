@@ -585,6 +585,83 @@ function fillDemoData() {
 
 
 // =============================================
+// JSON IMPORT MODAL
+// =============================================
+
+function openJsonModal() {
+    const modal = document.getElementById('jsonModal');
+    modal.style.display = 'flex';
+    document.getElementById('jsonInput').value = '';
+    document.getElementById('jsonInput').focus();
+}
+
+function closeJsonModal() {
+    document.getElementById('jsonModal').style.display = 'none';
+}
+
+function applyJsonFromModal() {
+    const raw = document.getElementById('jsonInput').value.trim();
+    if (!raw) {
+        showNotification('Please paste a JSON object first.', 'warning');
+        return;
+    }
+    try {
+        const obj = JSON.parse(raw);
+        applyJsonToForm(obj);
+        closeJsonModal();
+        showNotification(`JSON applied! ${Object.keys(obj).length} fields loaded. Click Predict HbA1c.`, 'info');
+    } catch (e) {
+        showNotification('Invalid JSON. Please check the format.', 'error');
+        console.error('JSON parse error:', e);
+    }
+}
+
+function applyJsonToForm(json) {
+    // Radio button fields: name → {valueToIdMap}
+    const radioFields = {
+        'PreBLGender': { 'Male': 'gender_male', 'Female': 'gender_female', 'Others': 'gender_others' },
+        'PreRarea': { '1': 'area_urban', '2': 'area_rural' },
+        'PreRdiafather': { '0': 'diafather_no', '1': 'diafather_yes' },
+        'PreRdiamother': { '0': 'diamother_no', '1': 'diamother_yes' },
+        'PreRdiabrother': { '0': 'diabrother_no', '1': 'diabrother_yes' },
+        'PreRdiasister': { '0': 'diasister_no', '1': 'diasister_yes' },
+        'current_smoking': { '0': 'smoking_no', '1': 'smoking_yes' },
+        'current_alcohol': { '0': 'alcohol_no', '1': 'alcohol_yes' },
+    };
+
+    // Direct input/select fields (by element ID)
+    const directFields = [
+        'PostBLAge', 'PreRmaritalstatus', 'PreReducation', 'PreRpresentoccupation',
+        'PreRsleepquality', 'PostRgroupname',
+        'PreRmildactivityduration', 'PreRmoderate', 'PreRmoderateduration',
+        'PreRvigorous', 'PreRvigorousduration',
+        'PreRskipbreakfast', 'PreRlessfruit', 'PreRlessvegetable',
+        'PreRmilk', 'PreRmeat', 'PreRfriedfood', 'PreRsweet',
+        'PreRwaist', 'PreRBMI', 'PreRsystolicfirst', 'PreRdiastolicfirst',
+        'PreBLPPBS', 'PreBLFBS', 'PreBLHBA1C',
+        'PreBLCHOLESTEROL', 'PreBLTRIGLYCERIDES', 'Diabetic_Duration',
+    ];
+
+    for (const [key, val] of Object.entries(json)) {
+        // Handle radio buttons
+        if (radioFields[key]) {
+            const idMap = radioFields[key];
+            const targetId = idMap[String(val)];
+            if (targetId) {
+                document.getElementById(targetId).checked = true;
+            }
+            continue;
+        }
+        // Handle direct input/select fields
+        if (directFields.includes(key)) {
+            const el = document.getElementById(key);
+            if (el) el.value = val;
+        }
+    }
+}
+
+
+// =============================================
 // WHAT-IF SCENARIO ANALYSIS
 // =============================================
 
@@ -736,30 +813,53 @@ function initSimulator() {
     document.getElementById('simBaselineStat').textContent = currentPrediction.predicted_hba1c.toFixed(2);
     updateSimulatorUI(currentPrediction, currentPrediction, currentFormData);
 
-    setupSimControl('Bmi', 'PreRBMI', 15, 60);
-    setupSimControl('Fbs', 'PreBLFBS', 50, 400);
-    setupSimControl('Hba1c', 'PreBLHBA1C', 3, 16);
-    setupSimControl('Bp', 'PreRsystolicfirst', 80, 220);
+    // Setup each control independently so one failure doesn't break the rest
+    const controls = [
+        ['Bmi', 'PreRBMI', 15, 60],
+        ['Fbs', 'PreBLFBS', 50, 400],
+        ['Hba1c', 'PreBLHBA1C', 3, 16],
+        ['Bp', 'PreRsystolicfirst', 80, 220],
+        ['Ppbs', 'PreBLPPBS', 70, 600],
+        ['Chol', 'PreBLCHOLESTEROL', 80, 400],
+        ['Trig', 'PreBLTRIGLYCERIDES', 50, 1000],
+        ['Waist', 'PreRwaist', 50, 150],
+    ];
+    controls.forEach(([prefix, field, min, max]) => {
+        try {
+            setupSimControl(prefix, field, min, max);
+        } catch (err) {
+            console.error(`[Sim] Failed to setup ${prefix}:`, err);
+        }
+    });
 }
 
 function setupSimControl(idPrefix, fieldName, min, max) {
     const slider = document.getElementById(`sim${idPrefix}Slider`);
     const num = document.getElementById(`sim${idPrefix}Num`);
 
-    if (slider && num && currentFormData) {
-        let val = Number(currentFormData[fieldName]) || min;
-        if (val < min) val = min;
-        if (val > max) val = max;
-
-        slider.value = val;
-        num.value = val;
-
-        slider.oninput = (e) => { num.value = e.target.value; triggerSimulate(); };
-        num.oninput = (e) => {
-            let v = Number(e.target.value);
-            if (v >= min && v <= max) { slider.value = v; triggerSimulate(); }
-        };
+    if (!slider || !num || !currentFormData) {
+        console.warn(`[Sim] Missing element or data for ${idPrefix} (field=${fieldName})`);
+        return;
     }
+
+    // Dynamically set attributes on the number input so the browser renders values
+    num.setAttribute('min', min);
+    num.setAttribute('max', max);
+    num.setAttribute('step', slider.step || 'any');
+
+    let val = Number(currentFormData[fieldName]);
+    if (isNaN(val) || val === 0) val = min;
+    if (val < min) val = min;
+    if (val > max) val = max;
+
+    slider.value = val;
+    num.value = val;
+
+    slider.oninput = (e) => { num.value = e.target.value; triggerSimulate(); };
+    num.oninput = (e) => {
+        let v = Number(e.target.value);
+        if (!isNaN(v) && v >= min && v <= max) { slider.value = v; triggerSimulate(); }
+    };
 }
 
 function triggerSimulate() {
@@ -771,10 +871,21 @@ async function simulateRisk() {
     if (!currentFormData) return;
 
     const simulatedData = { ...currentFormData };
-    simulatedData.PreRBMI = parseFloat(document.getElementById('simBmiNum').value);
-    simulatedData.PreBLFBS = parseFloat(document.getElementById('simFbsNum').value);
-    simulatedData.PreBLHBA1C = parseFloat(document.getElementById('simHba1cNum').value);
-    simulatedData.PreRsystolicfirst = parseFloat(document.getElementById('simBpNum').value);
+
+    // Helper: read num input, fall back to currentFormData value
+    function readSim(elId, field) {
+        const v = parseFloat(document.getElementById(elId)?.value);
+        return isNaN(v) ? currentFormData[field] : v;
+    }
+
+    simulatedData.PreRBMI = readSim('simBmiNum', 'PreRBMI');
+    simulatedData.PreBLFBS = readSim('simFbsNum', 'PreBLFBS');
+    simulatedData.PreBLHBA1C = readSim('simHba1cNum', 'PreBLHBA1C');
+    simulatedData.PreRsystolicfirst = readSim('simBpNum', 'PreRsystolicfirst');
+    simulatedData.PreBLPPBS = readSim('simPpbsNum', 'PreBLPPBS');
+    simulatedData.PreBLCHOLESTEROL = readSim('simCholNum', 'PreBLCHOLESTEROL');
+    simulatedData.PreBLTRIGLYCERIDES = readSim('simTrigNum', 'PreBLTRIGLYCERIDES');
+    simulatedData.PreRwaist = readSim('simWaistNum', 'PreRwaist');
 
     try {
         const response = await fetchPrediction(simulatedData);

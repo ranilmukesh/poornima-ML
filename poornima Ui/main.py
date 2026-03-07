@@ -251,11 +251,40 @@ def interpret_feature(feature_name: str, impact: float) -> str:
         return f"{clean_name} {intensity} decreases predicted HbA1c"
 
 
+INTERACTION_PAIRS = [
+    ('PostRgroupname', 'PreBLHBA1C', 'group_x_hba1c'),
+    ('PostRgroupname', 'PreBLFBS',   'group_x_fbs'),
+    ('PostRgroupname', 'PreBLPPBS',  'group_x_ppbs'),
+]
+
+
+def _add_interaction_features(processed_array):
+    """Add interaction features to match training pipeline.
+    Returns numpy array with interaction columns appended."""
+    if feature_names is None:
+        return processed_array
+    df = pd.DataFrame(processed_array, columns=[fn for fn in feature_names if not fn.startswith('group_x_')])
+    base_names = list(df.columns)
+    for group_prefix, clinical_feat, out_name in INTERACTION_PAIRS:
+        group_cols = [c for c in base_names if c.startswith(f'cat__{group_prefix}') or c.startswith(group_prefix)]
+        if not group_cols or clinical_feat not in base_names:
+            continue
+        for gc in group_cols:
+            suffix = gc.split('_')[-1]
+            col_name = f"{out_name}_{suffix}"
+            df[col_name] = df[gc].values * df[clinical_feat].values
+    # Ensure all expected feature_names columns exist
+    for fn in feature_names:
+        if fn not in df.columns:
+            df[fn] = 0.0
+    return df[feature_names].values
+
+
 def _predict_hba1c(patient_data: dict) -> float:
     """Internal helper to predict HbA1c from a patient dict."""
     input_df = pd.DataFrame([patient_data])
     processed_array = preprocessor.transform(input_df)
-    # Pass processed_array (numpy) to avoid feature name mismatch warnings
+    processed_array = _add_interaction_features(processed_array)
     prediction = float(model.predict(processed_array)[0])
     return round(prediction, 2)
 
@@ -297,8 +326,8 @@ async def predict_hba1c(data: PatientData):
     try:
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
+        processed_array = _add_interaction_features(processed_array)
         
-        # Pass processed_array (numpy) to avoid feature name mismatch warnings
         predicted_hba1c = float(model.predict(processed_array)[0])
         risk_level, confidence = get_risk_level(predicted_hba1c)
 
@@ -357,8 +386,8 @@ async def explain_prediction(data: PatientData):
     try:
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
+        processed_array = _add_interaction_features(processed_array)
 
-        # Pass processed_array (numpy) to avoid feature name mismatch warnings
         shap_values = explainer.shap_values(processed_array)
 
         # For regression, shap_values is a 2D array directly
@@ -375,7 +404,7 @@ async def explain_prediction(data: PatientData):
         feature_impact.sort(key=lambda x: abs(x[1]), reverse=True)
 
         top_factors = []
-        for feat, impact in feature_impact[:5]:
+        for feat, impact in feature_impact[:10]:
             top_factors.append(FactorImpact(
                 feature=feat,
                 impact=round(float(impact), 4),
@@ -539,6 +568,17 @@ def _generate_scenarios(data: PatientData, shap_factors: list) -> list:
             "new_val": lambda d: "Yoga",
         },
         {
+            "field": "PostRgroupname",
+            "condition": lambda d: d["PostRgroupname"] == 1,
+            "modify": lambda d: {**d, "PostRgroupname": 2},
+            "title": "Standard Care Only",
+            "desc": lambda d: "What if you stopped the yoga intervention and only received standard care?",
+            "change": lambda d: "Group: Yoga → Control",
+            "icon": "🏥",
+            "orig_val": lambda d: "Yoga",
+            "new_val": lambda d: "Control",
+        },
+        {
             "field": "PreRsleepquality",
             "condition": lambda d: d["PreRsleepquality"] > 2,
             "modify": lambda d: {**d, "PreRsleepquality": 1.0},
@@ -586,8 +626,8 @@ async def whatif_analysis(data: PatientData):
         # Get SHAP factors
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
+        processed_array = _add_interaction_features(processed_array)
         
-        # Pass processed_array (numpy) to avoid feature name mismatch warnings
         shap_values = explainer.shap_values(processed_array)
 
         if isinstance(shap_values, list):
@@ -622,7 +662,11 @@ async def whatif_analysis(data: PatientData):
                 suggested_value=s["suggested_value"],
             ))
 
-        scenarios.sort(key=lambda x: x.hba1c_delta, reverse=True)
+        # Sort scenarios: Yoga intervention first, then by hba1c_delta
+        scenarios.sort(
+            key=lambda x: float('inf') if x.factor_changed == "PostRgroupname" else x.hba1c_delta,
+            reverse=True
+        )
         best = scenarios[0] if scenarios else None
 
         # Combined scenario
@@ -652,6 +696,7 @@ async def whatif_analysis(data: PatientData):
                 elif field == "PreBLTRIGLYCERIDES":
                     combined_dict["PreBLTRIGLYCERIDES"] = 130.0
                 elif field == "PostRgroupname":
+                    # For the combined "best possible" scenario, always apply the better group (Yoga=1)
                     combined_dict["PostRgroupname"] = 1
                 elif field == "PreRsleepquality":
                     combined_dict["PreRsleepquality"] = 1.0
@@ -682,8 +727,8 @@ async def predict_batch(patients: List[PatientData]):
         for patient in patients:
             input_df = prepare_input_dataframe(patient)
             processed_array = preprocessor.transform(input_df)
+            processed_array = _add_interaction_features(processed_array)
 
-            # Pass processed_array (numpy) to avoid feature name mismatch warnings
             predicted = float(model.predict(processed_array)[0])
             risk_level, confidence = get_risk_level(predicted)
 
