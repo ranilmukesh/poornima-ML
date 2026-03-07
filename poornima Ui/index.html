@@ -586,13 +586,12 @@
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label class="input-label">HbA1c (%)</label>
+                            <label class="input-label">HbA1c Level</label>
                             <div class="input-with-unit">
                                 <input type="number" id="PreBLHBA1C" placeholder="e.g., 8.2" step="0.1" min="4.0"
                                     max="18.0" required>
-                                <span class="input-unit">%</span>
                             </div>
-                            <span class="input-hint">Range: 4.0 – 18.0 %</span>
+                            <span class="input-hint">Range: 4.0 – 18.0</span>
                         </div>
                         <div class="input-group">
                             <label class="input-label">Diabetic Duration (years)</label>
@@ -664,7 +663,6 @@
                         </svg>
                         <div class="risk-value">
                             <span class="risk-percentage" id="riskPercentage">0</span>
-                            <span class="risk-symbol">%</span>
                         </div>
                     </div>
                     <div class="risk-level" id="riskLevel">CALCULATING</div>
@@ -724,7 +722,7 @@
                             <text x="100" y="36" class="sim-shield-cross">+</text>
                         </svg>
                         <div class="sim-center-text">
-                            <div id="simRiskValue" class="sim-val">--%</div>
+                            <div id="simRiskValue" class="sim-val">--</div>
                             <div id="simRiskLabel" class="sim-lbl">PREDICTED HbA1c</div>
                         </div>
                     </div>
@@ -754,7 +752,7 @@
                             <input type="number" id="simFbsNum" class="sim-num-input">
                         </div>
                         <div class="sim-control">
-                            <span class="sim-control-lbl">Pre-HbA1c (%)</span>
+                            <span class="sim-control-lbl">Pre-HbA1c</span>
                             <input type="range" id="simHba1cSlider" min="4" max="18" step="0.1" class="sim-slider">
                             <input type="number" id="simHba1cNum" class="sim-num-input">
                         </div>

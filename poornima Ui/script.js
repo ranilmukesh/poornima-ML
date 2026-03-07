@@ -653,7 +653,7 @@ function createScenarioCard(scenario) {
             <div class="whatif-card-comparison">
                 <div class="whatif-risk-original">
                     <span class="whatif-risk-label">Current</span>
-                    <span class="whatif-risk-val">${scenario.original_hba1c.toFixed(2)}%</span>
+                    <span class="whatif-risk-val">${scenario.original_hba1c.toFixed(2)}</span>
                 </div>
                 <div class="whatif-arrow-container">
                     <svg class="whatif-arrow ${isReduction ? 'reduction' : 'increase'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -662,7 +662,7 @@ function createScenarioCard(scenario) {
                 </div>
                 <div class="whatif-risk-modified">
                     <span class="whatif-risk-label">Modified</span>
-                    <span class="whatif-risk-val ${isReduction ? 'improved' : 'worsened'}">${scenario.modified_hba1c.toFixed(2)}%</span>
+                    <span class="whatif-risk-val ${isReduction ? 'improved' : 'worsened'}">${scenario.modified_hba1c.toFixed(2)}</span>
                 </div>
             </div>
             <div class="whatif-delta-bar">
@@ -692,8 +692,8 @@ function displayCombinedOutcome(data) {
     const totalDelta = originalHba1c - combinedHba1c;
     const totalImprovePct = originalHba1c > 0 ? (totalDelta / originalHba1c * 100) : 0;
 
-    elements.combinedOriginalRisk.textContent = `${originalHba1c.toFixed(2)}%`;
-    elements.combinedModifiedRisk.textContent = `${combinedHba1c.toFixed(2)}%`;
+    elements.combinedOriginalRisk.textContent = `${originalHba1c.toFixed(2)}`;
+    elements.combinedModifiedRisk.textContent = `${combinedHba1c.toFixed(2)}`;
 
     if (combinedHba1c < originalHba1c) {
         elements.combinedModifiedRisk.classList.add('improved');
@@ -733,7 +733,7 @@ function initSimulator() {
     const simCard = document.getElementById('interactiveSimulator');
     if (simCard) simCard.classList.remove('hidden');
 
-    document.getElementById('simBaselineStat').textContent = currentPrediction.predicted_hba1c.toFixed(2) + '%';
+    document.getElementById('simBaselineStat').textContent = currentPrediction.predicted_hba1c.toFixed(2);
     updateSimulatorUI(currentPrediction, currentPrediction, currentFormData);
 
     setupSimControl('Bmi', 'PreRBMI', 15, 60);
@@ -788,9 +788,9 @@ function updateSimulatorUI(baselinePred, targetPred, simData) {
     const hba1c = targetPred.predicted_hba1c;
     const levelStr = targetPred.risk_level.replace('_', ' ').toUpperCase();
 
-    document.getElementById('simRiskValue').textContent = hba1c.toFixed(2) + '%';
+    document.getElementById('simRiskValue').textContent = hba1c.toFixed(2);
     document.getElementById('simRiskLabel').textContent = levelStr;
-    document.getElementById('simTargetStat').textContent = hba1c.toFixed(2) + '%';
+    document.getElementById('simTargetStat').textContent = hba1c.toFixed(2);
 
     const delta = (hba1c - baselinePred.predicted_hba1c).toFixed(2);
     const deltaEl = document.getElementById('simDeltaStat');

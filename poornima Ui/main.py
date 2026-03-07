@@ -12,7 +12,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import os
-import numpy as np
 
 # Graceful LLM import
 try:
@@ -48,16 +47,12 @@ model = None
 shap_model = None
 preprocessor = None
 feature_names = None
-base_feature_names = None
-poly_transformer = None
-poly_indices = None
 explainer = None
 
 
 def load_artifacts():
     """Load saved model artifacts."""
-    global model, shap_model, preprocessor, feature_names, base_feature_names
-    global poly_transformer, poly_indices, explainer
+    global model, shap_model, preprocessor, feature_names, explainer
 
     if not os.path.exists(ARTIFACTS_PATH):
         raise FileNotFoundError(
@@ -72,30 +67,14 @@ def load_artifacts():
     preprocessor = artifacts['preprocessor']
     feature_names = artifacts['feature_names']
 
-    # Polynomial feature support
-    poly_transformer = artifacts.get('poly_transformer', None)
-    poly_indices = artifacts.get('poly_indices', None)
-
-    # Compute base feature names (before poly) from preprocessor
-    try:
-        ohe_names = preprocessor.named_transformers_['cat']['encoder'].get_feature_names_out(
-            [t[2] for t in preprocessor.transformers_ if t[0] == 'cat'][0]
-        ) if hasattr(preprocessor, 'transformers_') else []
-        num_names = [t[2] for t in preprocessor.transformers_ if t[0] == 'num'][0] \
-            if hasattr(preprocessor, 'transformers_') else []
-        base_feature_names = list(num_names) + list(ohe_names)
-    except Exception:
-        base_feature_names = feature_names  # fallback
-
-    # Use dedicated XGB model for SHAP if available
+    # Use dedicated XGB model for SHAP if available (stacking model can't use TreeExplainer)
     shap_model = artifacts.get('shap_model', model)
 
     print("[*] Initializing SHAP Explainer...")
     explainer = shap.TreeExplainer(shap_model)
 
-    poly_info = f" + poly({len(feature_names) - len(base_feature_names)} interactions)" if poly_transformer else ""
-    print(f"[OK] Loaded! {type(model).__name__} | {len(base_feature_names)} base features{poly_info}")
-    print(f"     SHAP: {type(shap_model).__name__}")
+    print(f"[OK] All artifacts loaded! Model type: {type(model).__name__}")
+    print(f"     SHAP model type: {type(shap_model).__name__}")
 
 
 @app.on_event("startup")
@@ -272,31 +251,12 @@ def interpret_feature(feature_name: str, impact: float) -> str:
         return f"{clean_name} {intensity} decreases predicted HbA1c"
 
 
-def _apply_poly_features(processed_df: pd.DataFrame) -> pd.DataFrame:
-    """Apply polynomial interaction features to match training pipeline."""
-    if poly_transformer is None or poly_indices is None:
-        return processed_df
-
-    X_poly_src = processed_df.iloc[:, poly_indices].values
-    X_poly = poly_transformer.transform(X_poly_src)
-
-    poly_names = poly_transformer.get_feature_names_out(
-        [base_feature_names[i] for i in poly_indices]
-    )
-    new_poly_names = [n for n in poly_names if ' ' in n]
-    new_poly_data = X_poly[:, len(poly_indices):]
-
-    poly_df = pd.DataFrame(new_poly_data, columns=new_poly_names, index=processed_df.index)
-    return pd.concat([processed_df, poly_df], axis=1)
-
-
 def _predict_hba1c(patient_data: dict) -> float:
     """Internal helper to predict HbA1c from a patient dict."""
     input_df = pd.DataFrame([patient_data])
     processed_array = preprocessor.transform(input_df)
-    processed_df = pd.DataFrame(processed_array, columns=base_feature_names)
-    processed_df = _apply_poly_features(processed_df)
-    prediction = float(model.predict(processed_df)[0])
+    # Pass processed_array (numpy) to avoid feature name mismatch warnings
+    prediction = float(model.predict(processed_array)[0])
     return round(prediction, 2)
 
 
@@ -337,10 +297,9 @@ async def predict_hba1c(data: PatientData):
     try:
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
-        processed_df = pd.DataFrame(processed_array, columns=base_feature_names)
-        processed_df = _apply_poly_features(processed_df)
-
-        predicted_hba1c = float(model.predict(processed_df)[0])
+        
+        # Pass processed_array (numpy) to avoid feature name mismatch warnings
+        predicted_hba1c = float(model.predict(processed_array)[0])
         risk_level, confidence = get_risk_level(predicted_hba1c)
 
         # Clinical interpretation from reference sheet
@@ -365,16 +324,16 @@ async def predict_hba1c(data: PatientData):
 
         response_line = None
         if pre_cat == "Diabetes":
-            if delta >= 1.0: response_line = f"Predicted response: Major improvement – Risk reduction achieved (ΔHbA1c {delta:+.2f}%)"
-            elif delta >= 0.5: response_line = f"Predicted response: Clinically meaningful improvement (ΔHbA1c {delta:+.2f}%)"
-            elif delta >= 0: response_line = f"Predicted response: Stabilization / modest improvement (ΔHbA1c {delta:+.2f}%)"
-            else: response_line = f"Predicted response: Non-response (ΔHbA1c {delta:+.2f}%)"
+            if delta >= 1.0: response_line = f"Predicted response: Major improvement – Risk reduction achieved (ΔHbA1c {delta:+.2f})"
+            elif delta >= 0.5: response_line = f"Predicted response: Clinically meaningful improvement (ΔHbA1c {delta:+.2f})"
+            elif delta >= 0: response_line = f"Predicted response: Stabilization / modest improvement (ΔHbA1c {delta:+.2f})"
+            else: response_line = f"Predicted response: Non-response (ΔHbA1c {delta:+.2f})"
 
         target_line = None
         if pre_cat == "Diabetes" and pre_hba1c > 7.0:
             target = 7.0 if age < 65 else 7.5
             achieved = "Achieved" if predicted_hba1c <= target else "Not achieved"
-            target_line = f"Glycemic control target: ≤{target}% (age {int(age)}) | {achieved}"
+            target_line = f"Glycemic control target: ≤{target} (age {int(age)}) | {achieved}"
 
         return PredictionResponse(
             predicted_hba1c=round(predicted_hba1c, 2),
@@ -398,10 +357,9 @@ async def explain_prediction(data: PatientData):
     try:
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
-        processed_df = pd.DataFrame(processed_array, columns=base_feature_names)
-        processed_df = _apply_poly_features(processed_df)
 
-        shap_values = explainer.shap_values(processed_df)
+        # Pass processed_array (numpy) to avoid feature name mismatch warnings
+        shap_values = explainer.shap_values(processed_array)
 
         # For regression, shap_values is a 2D array directly
         if isinstance(shap_values, list):
@@ -628,8 +586,9 @@ async def whatif_analysis(data: PatientData):
         # Get SHAP factors
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
-        processed_df = pd.DataFrame(processed_array, columns=feature_names)
-        shap_values = explainer.shap_values(processed_df)
+        
+        # Pass processed_array (numpy) to avoid feature name mismatch warnings
+        shap_values = explainer.shap_values(processed_array)
 
         if isinstance(shap_values, list):
             vals = shap_values[0]
@@ -723,10 +682,9 @@ async def predict_batch(patients: List[PatientData]):
         for patient in patients:
             input_df = prepare_input_dataframe(patient)
             processed_array = preprocessor.transform(input_df)
-            processed_df = pd.DataFrame(processed_array, columns=base_feature_names)
-            processed_df = _apply_poly_features(processed_df)
 
-            predicted = float(model.predict(processed_df)[0])
+            # Pass processed_array (numpy) to avoid feature name mismatch warnings
+            predicted = float(model.predict(processed_array)[0])
             risk_level, confidence = get_risk_level(predicted)
 
             results.append({
