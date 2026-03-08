@@ -55,12 +55,7 @@ echo [2/6] No model artifacts found. Training required...
 
 :DO_TRAIN
 :: Set Nvidia API Key first (needed before training)
-echo [3/6] Setting up AI Chat credentials...
-setx NVIDIA_API_KEY "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" >nul 2>&1
-set NVIDIA_API_KEY=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
-echo NVIDIA_API_KEY=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> .env
-echo       NVIDIA_API_KEY configured!
-echo.
+
 
 echo [4/6] Training DiabeSense+ model...
 echo       This merges all diabetes CSV datasets and trains StackingRegressor.
