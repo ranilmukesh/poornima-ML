@@ -99,11 +99,15 @@ runs/
 logs/
 *.log
 
-# Data files (uncomment if needed)
-# *.csv
-# *.xlsx
-# *.json
-# *.parquet
+Data files (uncomment if needed)
+*.csv
+*.xlsx
+*.json
+*.parquet
+*.pkl
+*.bat
+*.csv
+
 
 # Project specific
 temp_processed/
