@@ -40,6 +40,7 @@ let currentFormData = null;
 function init() {
     setupEventListeners();
     checkAPIHealth();
+    restoreFormFromStorage();
 }
 
 function setupEventListeners() {
@@ -86,6 +87,7 @@ async function handleFormSubmit(e) {
         currentExplanation = explanationResult;
         currentFormData = formData;
 
+        saveFormToStorage(formData);
         displayResults(predictionResult, explanationResult);
         fetchWhatIfAnalysis(formData);
     } catch (error) {
@@ -113,6 +115,7 @@ function collectFormData() {
         current_smoking: parseInt(document.querySelector('input[name="current_smoking"]:checked')?.value || '0'),
         current_alcohol: parseInt(document.querySelector('input[name="current_alcohol"]:checked')?.value || '0'),
         PreRsleepquality: parseFloat(document.getElementById('PreRsleepquality').value),
+        PreRmildactivity: parseFloat(document.getElementById('PreRmildactivity').value),
         PreRmildactivityduration: parseFloat(document.getElementById('PreRmildactivityduration').value),
         PreRmoderate: parseFloat(document.getElementById('PreRmoderate').value),
         PreRmoderateduration: parseFloat(document.getElementById('PreRmoderateduration').value),
@@ -140,14 +143,55 @@ function collectFormData() {
 }
 
 function validateFormData(data) {
-    // Check critical fields
-    if (!data.PreBLGender) { showNotification('Please select a gender.', 'warning'); return false; }
-    if (isNaN(data.PostBLAge) || data.PostBLAge < 18) { showNotification('Please enter a valid age (18-90).', 'warning'); return false; }
-    if (!data.PreRarea) { showNotification('Please select place of residence.', 'warning'); return false; }
-    if (!data.PostRgroupname) { showNotification('Please select a care plan.', 'warning'); return false; }
-    if (isNaN(data.PreBLHBA1C) || data.PreBLHBA1C <= 0) { showNotification('Please enter pre-treatment HbA1c.', 'warning'); return false; }
-    if (isNaN(data.PreBLFBS) || data.PreBLFBS <= 0) { showNotification('Please enter fasting blood sugar.', 'warning'); return false; }
-    if (isNaN(data.PreRBMI) || data.PreRBMI <= 0) { showNotification('Please enter BMI.', 'warning'); return false; }
+    const err = (msg) => { showNotification(msg, 'warning'); return false; };
+    const dropSel = (id, label) => {
+        const v = document.getElementById(id)?.value;
+        if (!v || v === '') return err(`Please select ${label}.`);
+        return true;
+    };
+    const inRange = (val, min, max, label) => {
+        if (isNaN(val) || val < min || val > max)
+            return err(`${label} must be between ${min} and ${max}.`);
+        return true;
+    };
+
+    // Demographics
+    if (!data.PreBLGender) return err('Please select a gender.');
+    if (!inRange(data.PostBLAge, 18, 90, 'Age')) return false;
+    if (!data.PreRarea) return err('Please select place of residence.');
+    if (!dropSel('PreRmaritalstatus', 'marital status')) return false;
+    if (!dropSel('PreReducation', 'education level')) return false;
+    if (!dropSel('PreRpresentoccupation', 'occupation')) return false;
+    // Lifestyle
+    if (!dropSel('PreRsleepquality', 'sleep quality')) return false;
+    if (!dropSel('PostRgroupname', 'a care plan')) return false;
+    // Physical Activity
+    if (!dropSel('PreRmildactivity', 'mild activity frequency')) return false;
+    if (!dropSel('PreRmildactivityduration', 'mild activity duration')) return false;
+    if (!dropSel('PreRmoderate', 'moderate activity frequency')) return false;
+    if (!dropSel('PreRmoderateduration', 'moderate activity duration')) return false;
+    if (!dropSel('PreRvigorous', 'vigorous activity frequency')) return false;
+    if (!dropSel('PreRvigorousduration', 'vigorous activity duration')) return false;
+    // Diet
+    if (!dropSel('PreRskipbreakfast', 'breakfast habit')) return false;
+    if (!dropSel('PreRlessfruit', 'fruit intake')) return false;
+    if (!dropSel('PreRlessvegetable', 'vegetable intake')) return false;
+    if (!dropSel('PreRmilk', 'milk/curd intake')) return false;
+    if (!dropSel('PreRmeat', 'meat/fish intake')) return false;
+    if (!dropSel('PreRfriedfood', 'fried food intake')) return false;
+    if (!dropSel('PreRsweet', 'sweet intake')) return false;
+    // Measurements
+    if (!inRange(data.PreRwaist, 50, 150, 'Waist circumference (cm)')) return false;
+    if (!inRange(data.PreRBMI, 10, 60, 'BMI')) return false;
+    if (!inRange(data.PreRsystolicfirst, 70, 250, 'Systolic BP (mmHg)')) return false;
+    if (!inRange(data.PreRdiastolicfirst, 40, 150, 'Diastolic BP (mmHg)')) return false;
+    // Blood work
+    if (!inRange(data.PreBLPPBS, 70, 600, 'PPBS (mg/dL)')) return false;
+    if (!inRange(data.PreBLFBS, 50, 400, 'FBS (mg/dL)')) return false;
+    if (!inRange(data.PreBLHBA1C, 4.0, 18.0, 'HbA1c (%)')) return false;
+    if (!inRange(data.PreBLCHOLESTEROL, 80, 400, 'Cholesterol (mg/dL)')) return false;
+    if (!inRange(data.PreBLTRIGLYCERIDES, 50, 1000, 'Triglycerides (mg/dL)')) return false;
+    if (!inRange(data.Diabetic_Duration, 0, 60, 'Diabetic duration (years)')) return false;
     return true;
 }
 
@@ -181,6 +225,7 @@ function displayResults(prediction, explanation) {
         setTimeout(() => {
             animateRiskScore(prediction);
             displayClinicalInterpretation(prediction);
+            displayInputSummary(currentFormData);
             displayFactors(explanation.top_contributing_factors);
             displayRecommendations(prediction.risk_level);
             initSimulator();
@@ -345,94 +390,69 @@ function createFactorCard(factor, maxImpact) {
  * Format encoded feature names to human-readable labels
  */
 function formatFeatureName(name) {
-    const nameMap = {
-        'PostBLAge': 'Age',
-        'PreRwaist': 'Waist Circumference',
-        'PreRBMI': 'BMI (Body Mass Index)',
-        'PreRsystolicfirst': 'Systolic Blood Pressure',
-        'PreRdiastolicfirst': 'Diastolic Blood Pressure',
-        'PreBLPPBS': 'Post-Prandial Blood Sugar',
-        'PreBLFBS': 'Fasting Blood Sugar',
-        'PreBLHBA1C': 'Pre-Treatment HbA1c',
-        'PreBLCHOLESTEROL': 'Cholesterol',
-        'PreBLTRIGLYCERIDES': 'Triglycerides',
-        'Diabetic_Duration': 'Diabetes Duration',
-        'PreRmildactivityduration': 'Mild Activity Duration',
-        'PreRmoderateduration': 'Moderate Activity Duration',
-        'PreRvigorousduration': 'Vigorous Activity Duration',
-        // One-hot encoded categorical features
-        'PreBLGender_Male': 'Gender: Male',
-        'PreBLGender_Female': 'Gender: Female',
-        'PreRarea_1': 'Urban Area',
-        'PreRarea_2': 'Rural Area',
-        'PreRarea_1.0': 'Urban Area',
-        'PreRarea_2.0': 'Rural Area',
-        'PreRdiafather_0': 'Father: No Diabetes',
-        'PreRdiafather_1': 'Father: Has Diabetes',
-        'PreRdiafather_0.0': 'Father: No Diabetes',
-        'PreRdiafather_1.0': 'Father: Has Diabetes',
-        'PreRdiamother_0': 'Mother: No Diabetes',
-        'PreRdiamother_1': 'Mother: Has Diabetes',
-        'PreRdiamother_0.0': 'Mother: No Diabetes',
-        'PreRdiamother_1.0': 'Mother: Has Diabetes',
-        'PreRdiabrother_0': 'Brother: No Diabetes',
-        'PreRdiabrother_1': 'Brother: Has Diabetes',
-        'PreRdiabrother_0.0': 'Brother: No Diabetes',
-        'PreRdiabrother_1.0': 'Brother: Has Diabetes',
-        'PreRdiasister_0': 'Sister: No Diabetes',
-        'PreRdiasister_1': 'Sister: Has Diabetes',
-        'PreRdiasister_0.0': 'Sister: No Diabetes',
-        'PreRdiasister_1.0': 'Sister: Has Diabetes',
-        'current_smoking_0': 'Non-Smoker',
-        'current_smoking_1': 'Current Smoker',
-        'current_smoking_0.0': 'Non-Smoker',
-        'current_smoking_1.0': 'Current Smoker',
-        'current_alcohol_0': 'No Alcohol',
-        'current_alcohol_1': 'Current Drinker',
-        'current_alcohol_0.0': 'No Alcohol',
-        'current_alcohol_1.0': 'Current Drinker',
-        'PostRgroupname_1': 'Yoga Group',
-        'PostRgroupname_2': 'Control Group',
-        'PostRgroupname_1.0': 'Yoga Group',
-        'PostRgroupname_2.0': 'Control Group',
+    const READABLE_NAMES = {
+        "PostBLAge": "Age",
+        "PreBLGender": "Gender",
+        "PreRarea": "Residential area",
+        "PreRmaritalstatus": "Marital status",
+        "PreReducation": "Education level",
+        "PreRpresentoccupation": "Current occupation",
+
+        "PreRdiafather": "Father's diabetes history",
+        "PreRdiamother": "Mother's diabetes history",
+        "PreRdiabrother": "Brother's diabetes history",
+        "PreRdiasister": "Sister's diabetes history",
+
+        "PreRsleepquality": "Sleep quality",
+        "PreRmildactivity": "Mild physical activity",
+        "PreRmildactivityduration": "Mild activity duration",
+        "PreRmoderate": "Moderate physical activity",
+        "PreRmoderateduration": "Moderate activity duration",
+        "PreRvigorous": "Vigorous physical activity",
+        "PreRvigorousduration": "Vigorous activity duration",
+
+        "PreRskipbreakfast": "Skipping breakfast",
+        "PreRlessfruit": "Low fruit intake",
+        "PreRlessvegetable": "Low vegetable intake",
+        "PreRmilk": "Milk consumption",
+        "PreRmeat": "Meat consumption",
+        "PreRfriedfood": "Fried food intake",
+        "PreRsweet": "Sweet intake",
+
+        "PreRwaist": "Waist circumference",
+        "PreRBMI": "Body Mass Index (BMI)",
+
+        "PreRsystolicfirst": "Systolic blood pressure",
+        "PreRdiastolicfirst": "Diastolic blood pressure",
+
+        "PreBLPPBS": "Postprandial blood glucose",
+        "PreBLFBS": "Fasting blood glucose",
+        "PreBLHBA1C": "HbA1c",
+
+        "PreBLCHOLESTEROL": "Total cholesterol",
+        "PreBLTRIGLYCERIDES": "Triglycerides",
+
+        "Diabetic_Duration": "Duration of diabetes (years)",
+        "PostRgroupname": "Intervention",
+        "current_alcohol": "Current alcohol use",
+        "current_smoking": "Current smoking status",
     };
 
-    if (nameMap[name]) return nameMap[name];
+    // Clean OHE suffixes from categorical variables (e.g. PreRmaritalstatus_1.0 -> PreRmaritalstatus)
+    const baseName = name.split('_')[0] === name.split('_')[0] && !name.includes('group_x') 
+        ? name.replace(/_\d+(\.\d+)?$/, '') 
+        : name;
 
-    // Marital status codes
-    const maritalMap = { '1': 'Married', '1.0': 'Married', '2': 'Unmarried', '2.0': 'Unmarried', '3': 'Divorcee/Separated', '3.0': 'Divorcee/Separated', '4': 'Widow/Widower', '4.0': 'Widow/Widower', '5': 'Others', '5.0': 'Others' };
-    if (name.startsWith('PreRmaritalstatus_')) { const v = name.split('_').pop(); return `Marital: ${maritalMap[v] || v}`; }
+    if (READABLE_NAMES[baseName]) {
+        // If it was a one-hot encoded variable, we might want to show the category value too,
+        // but for SHAP the base name is often enough to represent "Impact of Marital Status".
+        return READABLE_NAMES[baseName];
+    }
 
-    // Education codes
-    const eduMap = { '1': 'No formal schooling', '1.0': 'No formal schooling', '2': 'Primary school', '2.0': 'Primary school', '3': 'High school', '3.0': 'High school', '4': 'Intermediate', '4.0': 'Intermediate', '5': 'University', '5.0': 'University', '6': 'Univ. completed+', '6.0': 'Univ. completed+', '7': 'Others', '7.0': 'Others' };
-    if (name.startsWith('PreReducation_')) { const v = name.split('_').pop(); return `Education: ${eduMap[v] || v}`; }
-
-    // Occupation codes
-    const occMap = { '1': 'Professional/Executive', '1.0': 'Professional/Executive', '2': 'Clerical/Medium business', '2.0': 'Clerical/Medium business', '3': 'Self-employed/Skilled', '3.0': 'Self-employed/Skilled', '4': 'Unskilled laborer', '4.0': 'Unskilled laborer', '5': 'Homemaker', '5.0': 'Homemaker', '6': 'Retired', '6.0': 'Retired', '7': 'Unemployed (able)', '7.0': 'Unemployed (able)', '8': 'Unemployed (unable)', '8.0': 'Unemployed (unable)', '9': 'Others', '9.0': 'Others' };
-    if (name.startsWith('PreRpresentoccupation_')) { const v = name.split('_').pop(); return `Occupation: ${occMap[v] || v}`; }
-
-    // Sleep quality codes
-    const sleepMap = { '1': 'Very good', '1.0': 'Very good', '2': 'Fairly good', '2.0': 'Fairly good', '3': 'Fairly bad', '3.0': 'Fairly bad', '4': 'Very bad', '4.0': 'Very bad' };
-    if (name.startsWith('PreRsleepquality_')) { const v = name.split('_').pop(); return `Sleep: ${sleepMap[v] || v}`; }
-
-    // Activity frequency codes
-    const freqMap = { '0': 'None', '0.0': 'None', '1': 'Once/month', '1.0': 'Once/month', '2': '2-3×/month', '2.0': '2-3×/month', '3': 'Once/week', '3.0': 'Once/week', '4': '2-3×/week', '4.0': '2-3×/week', '5': '4-5×/week', '5.0': '4-5×/week', '6': 'Every day', '6.0': 'Every day' };
-    if (name.startsWith('PreRmoderate_')) { const v = name.split('_').pop(); return `Moderate Activity: ${freqMap[v] || v}`; }
-    if (name.startsWith('PreRvigorous_')) { const v = name.split('_').pop(); return `Vigorous Activity: ${freqMap[v] || v}`; }
-
-    // Duration codes
-    const durMap = { '0': 'None', '0.0': 'None', '1': '≤10 min', '1.0': '≤10 min', '2': '10-30 min', '2.0': '10-30 min', '3': '30min-1hr', '3.0': '30min-1hr', '4': '1-1.5 hrs', '4.0': '1-1.5 hrs', '5': '>1.5 hrs', '5.0': '>1.5 hrs' };
-    if (name.startsWith('PreRmildactivityduration_')) { const v = name.split('_').pop(); return `Mild Activity Duration: ${durMap[v] || v}`; }
-
-    // Diet frequency codes (1=Usually/Often, 2=Sometimes, 3=Rarely/Never)
-    const dietMap = { '1': 'Usually/Often', '1.0': 'Usually/Often', '2': 'Sometimes', '2.0': 'Sometimes', '3': 'Rarely/Never', '3.0': 'Rarely/Never' };
-    if (name.startsWith('PreRskipbreakfast_')) { const v = name.split('_').pop(); return `Skip Breakfast: ${dietMap[v] || v}`; }
-    if (name.startsWith('PreRlessfruit_')) { const v = name.split('_').pop(); return `Low Fruit Intake: ${dietMap[v] || v}`; }
-    if (name.startsWith('PreRlessvegetable_')) { const v = name.split('_').pop(); return `Low Vegetable Intake: ${dietMap[v] || v}`; }
-    if (name.startsWith('PreRmilk_')) { const v = name.split('_').pop(); return `Low Milk/Curd: ${dietMap[v] || v}`; }
-    if (name.startsWith('PreRmeat_')) { const v = name.split('_').pop(); return `High Meat/Fish: ${dietMap[v] || v}`; }
-    if (name.startsWith('PreRfriedfood_')) { const v = name.split('_').pop(); return `Fried Food: ${dietMap[v] || v}`; }
-    if (name.startsWith('PreRsweet_')) { const v = name.split('_').pop(); return `Sweets >2×/day: ${dietMap[v] || v}`; }
+    // Special handlers for interaction terms
+    if (name.includes('group_x_hba1c')) return 'Intervention × Baseline HbA1c';
+    if (name.includes('group_x_fbs')) return 'Intervention × Fasting glucose';
+    if (name.includes('group_x_ppbs')) return 'Intervention × Postprandial glucose';
 
     return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
@@ -495,11 +515,149 @@ function showLoading(show) {
 function showForm() {
     elements.resultsSection.classList.add('hidden');
     elements.assessmentForm.classList.remove('hidden');
-    elements.patientForm.reset();
+    // Do NOT reset the form — persistence is handled via localStorage
     resetWhatIf();
     hideChatWidget();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// =============================================
+// LOCAL STORAGE PERSISTENCE
+// =============================================
+const LS_KEY = 'diabesense_form_v1';
+
+function saveFormToStorage(formData) {
+    // Also capture radio + dropdown state from DOM directly
+    const store = { ...formData };
+    // Save radio button states by name
+    ['PreBLGender', 'PreRarea', 'PreRdiafather', 'PreRdiamother',
+     'PreRdiabrother', 'PreRdiasister', 'current_smoking', 'current_alcohol'
+    ].forEach(name => {
+        const checked = document.querySelector(`input[name="${name}"]:checked`);
+        store['_radio_' + name] = checked ? checked.id : null;
+    });
+    try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e) {}
+}
+
+function restoreFormFromStorage() {
+    let store;
+    try { store = JSON.parse(localStorage.getItem(LS_KEY)); } catch(e) { return; }
+    if (!store) return;
+
+    // Restore radio buttons
+    ['PreBLGender', 'PreRarea', 'PreRdiafather', 'PreRdiamother',
+     'PreRdiabrother', 'PreRdiasister', 'current_smoking', 'current_alcohol'
+    ].forEach(name => {
+        const id = store['_radio_' + name];
+        if (id) {
+            const el = document.getElementById(id);
+            if (el) el.checked = true;
+        }
+    });
+
+    // Restore direct fields
+    const directFields = [
+        'PostBLAge', 'PreRmaritalstatus', 'PreReducation', 'PreRpresentoccupation',
+        'PreRsleepquality', 'PostRgroupname',
+        'PreRmildactivity', 'PreRmildactivityduration', 'PreRmoderate', 'PreRmoderateduration',
+        'PreRvigorous', 'PreRvigorousduration',
+        'PreRskipbreakfast', 'PreRlessfruit', 'PreRlessvegetable',
+        'PreRmilk', 'PreRmeat', 'PreRfriedfood', 'PreRsweet',
+        'PreRwaist', 'PreRBMI', 'PreRsystolicfirst', 'PreRdiastolicfirst',
+        'PreBLPPBS', 'PreBLFBS', 'PreBLHBA1C',
+        'PreBLCHOLESTEROL', 'PreBLTRIGLYCERIDES', 'Diabetic_Duration',
+    ];
+    directFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && store[id] !== undefined && store[id] !== null && !isNaN(store[id])) {
+            el.value = store[id];
+        }
+    });
+}
+
+function resetForm() {
+    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    elements.patientForm.reset();
+    showNotification('Form cleared.', 'info');
+}
+
+// =============================================
+// INPUT SUMMARY PANEL
+// =============================================
+
+function toggleInputSummary() {
+    const body = document.getElementById('inputSummaryBody');
+    const chevron = document.getElementById('inputSummaryChevron');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function displayInputSummary(formData) {
+    const grid = document.getElementById('inputSummaryGrid');
+    if (!grid || !formData) return;
+
+    const freqMap = { 0:'None',1:'Once/month',2:'2-3×/month',3:'Once/week',4:'2-3×/week',5:'4-5×/week',6:'Every day' };
+    const durMap  = { 0:'None',1:'≤10 min',2:'10-30 min',3:'30min-1hr',4:'1-1.5hrs',5:'>1.5hrs' };
+    const dietMap = { 1:'Usually/Often',2:'Sometimes',3:'Rarely/Never' };
+    const maritalMap = { 1:'Married',2:'Unmarried',3:'Divorcee/Separated',4:'Widow/Widower',5:'Others' };
+    const eduMap = { 1:'No schooling',2:'Primary',3:'High school',4:'Intermediate',5:'University',6:'Univ+',7:'Others' };
+    const occMap = { 1:'Professional',2:'Clerical',3:'Self-employed',4:'Unskilled',5:'Homemaker',6:'Retired',7:'Unemployed(able)',8:'Unemployed(unable)',9:'Others' };
+    const sleepMap = { 1:'Very good',2:'Fairly good',3:'Fairly bad',4:'Very bad' };
+    const careMap = { 1:'Standard + Yoga',2:'Standard care' };
+
+    const radioLabel = (name) => document.querySelector(`input[name="${name}"]:checked`)?.parentElement?.textContent?.trim() || '—';
+
+    const rows = [
+        ['Age', formData.PostBLAge + ' yrs'],
+        ['Gender', formData.PreBLGender || radioLabel('PreBLGender')],
+        ['Residence', formData.PreRarea === 1 ? 'Urban' : 'Rural'],
+        ['Marital Status', maritalMap[formData.PreRmaritalstatus] || '—'],
+        ['Education', eduMap[formData.PreReducation] || '—'],
+        ['Occupation', occMap[formData.PreRpresentoccupation] || '—'],
+        ['Diabetic Father', formData.PreRdiafather ? 'Yes' : 'No'],
+        ['Diabetic Mother', formData.PreRdiamother ? 'Yes' : 'No'],
+        ['Diabetic Brother', formData.PreRdiabrother ? 'Yes' : 'No'],
+        ['Diabetic Sister', formData.PreRdiasister ? 'Yes' : 'No'],
+        ['Smoking', formData.current_smoking ? 'Yes' : 'No'],
+        ['Alcohol', formData.current_alcohol ? 'Yes' : 'No'],
+        ['Sleep Quality', sleepMap[formData.PreRsleepquality] || '—'],
+        ['Care Plan', careMap[formData.PostRgroupname] || '—'],
+        ['Mild Activity (freq)', freqMap[formData.PreRmildactivity] || '—'],
+        ['Mild Activity (dur)', durMap[formData.PreRmildactivityduration] || '—'],
+        ['Moderate Activity (freq)', freqMap[formData.PreRmoderate] || '—'],
+        ['Moderate Activity (dur)', durMap[formData.PreRmoderateduration] || '—'],
+        ['Vigorous Activity (freq)', freqMap[formData.PreRvigorous] || '—'],
+        ['Vigorous Activity (dur)', durMap[formData.PreRvigorousduration] || '—'],
+        ['Skip Breakfast', dietMap[formData.PreRskipbreakfast] || '—'],
+        ['Less Fruit', dietMap[formData.PreRlessfruit] || '—'],
+        ['Less Vegetable', dietMap[formData.PreRlessvegetable] || '—'],
+        ['Milk/Curd <400ml', dietMap[formData.PreRmilk] || '—'],
+        ['Meat/Fish >250g', dietMap[formData.PreRmeat] || '—'],
+        ['Fried Food', dietMap[formData.PreRfriedfood] || '—'],
+        ['Sweets >2×/day', dietMap[formData.PreRsweet] || '—'],
+        ['Waist', formData.PreRwaist + ' cm'],
+        ['BMI', formData.PreRBMI + ' kg/m²'],
+        ['SBP', formData.PreRsystolicfirst + ' mmHg'],
+        ['DBP', formData.PreRdiastolicfirst + ' mmHg'],
+        ['PPBS', formData.PreBLPPBS + ' mg/dL'],
+        ['FBS', formData.PreBLFBS + ' mg/dL'],
+        ['HbA1c (baseline)', formData.PreBLHBA1C + '%'],
+        ['Cholesterol', formData.PreBLCHOLESTEROL + ' mg/dL'],
+        ['Triglycerides', formData.PreBLTRIGLYCERIDES + ' mg/dL'],
+        ['Diabetic Duration', formData.Diabetic_Duration + ' yrs'],
+    ];
+
+    grid.innerHTML = rows.map(([label, val]) => `
+        <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:0.65rem;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px;">${label}</div>
+            <div style="font-size:0.85rem;color:#f5f0e8;font-weight:500;">${val}</div>
+        </div>
+    `).join('');
+}
+
+
 
 function showNotification(message, type = 'info') {
     const existing = document.querySelector('.notification');
@@ -553,6 +711,7 @@ function fillDemoData() {
     document.getElementById('PreRsleepquality').value = '2';
     // Care plan - select dropdown
     document.getElementById('PostRgroupname').value = '1';
+    document.getElementById('PreRmildactivity').value = '4';
     document.getElementById('PreRmildactivityduration').value = '3';
     document.getElementById('PreRmoderate').value = '2';
     document.getElementById('PreRmoderateduration').value = '2';
@@ -628,7 +787,7 @@ function applyJsonToForm(json) {
     const directFields = [
         'PostBLAge', 'PreRmaritalstatus', 'PreReducation', 'PreRpresentoccupation',
         'PreRsleepquality', 'PostRgroupname',
-        'PreRmildactivityduration', 'PreRmoderate', 'PreRmoderateduration',
+        'PreRmildactivity', 'PreRmildactivityduration', 'PreRmoderate', 'PreRmoderateduration',
         'PreRvigorous', 'PreRvigorousduration',
         'PreRskipbreakfast', 'PreRlessfruit', 'PreRlessvegetable',
         'PreRmilk', 'PreRmeat', 'PreRfriedfood', 'PreRsweet',

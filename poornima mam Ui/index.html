@@ -92,6 +92,10 @@
                         style="background:linear-gradient(135deg,#E85D4C,#c14438);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🎲
                         Demo Data</button>
+                    <button type="button" onclick="resetForm()"
+                        style="background:linear-gradient(135deg,#555,#333);color:#eee;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
+                        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔄
+                        Reset Form</button>
                 </div>
             </div>
 
@@ -330,6 +334,25 @@
                         (slow / normal walking)</p>
                     <div class="input-row">
                         <div class="input-group">
+                            <label class="input-label">How often?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmildactivity" required>
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">Once a month</option>
+                                    <option value="2">2 to 3 times a month</option>
+                                    <option value="3">Once a week</option>
+                                    <option value="4">2 to 3 times a week</option>
+                                    <option value="5">4 to 5 times a week</option>
+                                    <option value="6">Every day</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
+                        <div class="input-group">
                             <label class="input-label">How long per day?</label>
                             <div class="select-wrapper">
                                 <select id="PreRmildactivityduration" required>
@@ -347,7 +370,6 @@
                                     </svg></span>
                             </div>
                         </div>
-                        <div class="input-group"></div>
                     </div>
                     <!-- Moderate Activity -->
                     <p
@@ -727,6 +749,17 @@
                 </div>
             </div>
 
+            <!-- Input Summary Card -->
+            <div id="inputSummaryCard" style="background:var(--black);border-radius:16px;padding:0;margin-bottom:24px;overflow:hidden;">
+                <button onclick="toggleInputSummary()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+                    <span>📋 Your Submitted Inputs</span>
+                    <span id="inputSummaryChevron" style="transition:transform 0.3s;">▼</span>
+                </button>
+                <div id="inputSummaryBody" style="display:none;padding:0 20px 20px;">
+                    <div id="inputSummaryGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;"></div>
+                </div>
+            </div>
+
             <!-- Interactive Risk Simulator -->
             <div class="sim-card hidden" id="interactiveSimulator">
                 <div class="sim-card-header">
@@ -956,7 +989,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=2"></script>
+    <script src="script.js?v=3"></script>
 </body>
 
 </html>

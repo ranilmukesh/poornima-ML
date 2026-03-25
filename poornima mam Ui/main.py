@@ -105,6 +105,7 @@ class PatientData(BaseModel):
     current_smoking: int = Field(..., ge=0, le=1, description="Currently smokes: 1=Yes, 0=No")
     current_alcohol: int = Field(..., ge=0, le=1, description="Currently drinks alcohol: 1=Yes, 0=No")
     PreRsleepquality: float = Field(..., description="Sleep quality (1=Good to 4=Poor)")
+    PreRmildactivity: float = Field(..., description="Mild activity frequency (1-6)")
     PreRmildactivityduration: float = Field(..., description="Mild activity duration code (1-5)")
     PreRmoderate: float = Field(..., description="Moderate activity frequency (1-6)")
     PreRmoderateduration: float = Field(..., description="Moderate activity duration code (0-5)")
@@ -145,6 +146,7 @@ class PatientData(BaseModel):
                 "current_smoking": 0,
                 "current_alcohol": 0,
                 "PreRsleepquality": 2.0,
+                "PreRmildactivity": 4.0,
                 "PreRmildactivityduration": 3.0,
                 "PreRmoderate": 2.0,
                 "PreRmoderateduration": 2.0,
