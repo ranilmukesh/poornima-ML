@@ -105,7 +105,6 @@ class PatientData(BaseModel):
     current_smoking: int = Field(..., ge=0, le=1, description="Currently smokes: 1=Yes, 0=No")
     current_alcohol: int = Field(..., ge=0, le=1, description="Currently drinks alcohol: 1=Yes, 0=No")
     PreRsleepquality: float = Field(..., description="Sleep quality (1=Good to 4=Poor)")
-    PreRmildactivity: float = Field(..., description="Mild activity frequency (1-6)")
     PreRmildactivityduration: float = Field(..., description="Mild activity duration code (1-5)")
     PreRmoderate: float = Field(..., description="Moderate activity frequency (1-6)")
     PreRmoderateduration: float = Field(..., description="Moderate activity duration code (0-5)")
@@ -146,7 +145,6 @@ class PatientData(BaseModel):
                 "current_smoking": 0,
                 "current_alcohol": 0,
                 "PreRsleepquality": 2.0,
-                "PreRmildactivity": 4.0,
                 "PreRmildactivityduration": 3.0,
                 "PreRmoderate": 2.0,
                 "PreRmoderateduration": 2.0,
@@ -379,6 +377,91 @@ async def predict_hba1c(data: PatientData):
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 
+import math # Adding math import at top level
+
+# =============================================
+# CLINICAL GUARDRAILS FOR SHAP
+# =============================================
+
+HIDE_ALWAYS = []
+FAMILY_HISTORY_VARS = ['PreRdiafather', 'PreRdiamother', 'PreRdiabrother', 'PreRdiasister']
+YES_VALUES = [1, 1.0, "1", "1.0"]
+NO_VALUES = [0, 0.0, "0", "0.0"]
+
+THRESHOLD_RANGES = {
+    "PreRBMI": {"high": 25},
+    "PreRwaist": {"high": 90}
+}
+THRESHOLDS = {
+    "PreRsystolicfirst": 130,
+    "PreRdiastolicfirst": 80,
+    "PreBLCHOLESTEROL": 200,
+    "PreBLTRIGLYCERIDES": 150,
+    "PreBLFBS": 100,
+    "PreBLPPBS": 140
+}
+
+def is_missing(value):
+    return value is None or (isinstance(value, float) and math.isnan(value))
+
+def shap_direction(shap_value):
+    if shap_value > 0:
+        return "increase"
+    elif shap_value < 0:
+        return "decrease"
+    return None
+
+def directional_guardrail(feature, value, shap_value):
+    direction = shap_direction(shap_value)
+
+    if direction is None:
+        return "hide"
+
+    if is_missing(value):
+        return "hide"
+
+    if feature in HIDE_ALWAYS:
+        return "hide"
+
+    # Clean OHE suffix to match the base feature
+    base_feature = feature.split('_')[0] if feature.split('_')[0] == feature.split('_')[0] and not feature.startswith("group_x_") else feature
+    # A more robust cleanup:
+    base_feature = feature
+    for og_feat in list(THRESHOLD_RANGES.keys()) + list(THRESHOLDS.keys()) + FAMILY_HISTORY_VARS + ["PostBLAge"]:
+        if feature.startswith(og_feat):
+            base_feature = og_feat
+            break
+
+    # Age
+    if base_feature == "PostBLAge":
+        if value > 60 and direction == "decrease":
+            return "hide"
+        return direction
+
+    # Family history
+    if base_feature in FAMILY_HISTORY_VARS:
+        if value in NO_VALUES and direction == "increase":
+            return "hide"
+        if value in YES_VALUES and direction == "decrease":
+            return "hide"
+        return direction
+
+    # BMI & Waist (only high restriction)
+    if base_feature in THRESHOLD_RANGES:
+        high = THRESHOLD_RANGES[base_feature]["high"]
+        if value >= high and direction == "decrease":
+            return "hide"
+        return direction
+
+    # BP, Cholesterol, Triglycerides (same rule)
+    if base_feature in THRESHOLDS:
+        threshold = THRESHOLDS[base_feature]
+        if value >= threshold and direction == "decrease":
+            return "hide"
+        return direction
+
+    return direction
+
 @app.post("/explain", response_model=ExplainResponse, tags=["Explainability"])
 async def explain_prediction(data: PatientData):
     """Explain factors contributing to the HbA1c prediction using SHAP."""
@@ -386,6 +469,7 @@ async def explain_prediction(data: PatientData):
         raise HTTPException(status_code=503, detail="Model not loaded. Run train_model.py first.")
 
     try:
+        input_dict = data.model_dump()
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
         processed_array = _add_interaction_features(processed_array)
@@ -406,13 +490,28 @@ async def explain_prediction(data: PatientData):
         feature_impact.sort(key=lambda x: abs(x[1]), reverse=True)
 
         top_factors = []
-        for feat, impact in feature_impact[:10]:
+        for feat, impact in feature_impact:
+            # Find original input value corresponding to the feature
+            orig_val = 0
+            for k, v in input_dict.items():
+                if feat.startswith(k):
+                    orig_val = v
+                    break
+            
+            # Apply clinical guardrail
+            action = directional_guardrail(feat, orig_val, float(impact))
+            if action == "hide":
+                continue
+
             top_factors.append(FactorImpact(
                 feature=feat,
                 impact=round(float(impact), 4),
                 direction="Increases HbA1c" if impact > 0 else "Reduces HbA1c",
                 interpretation=interpret_feature(feat, impact)
             ))
+            
+            if len(top_factors) >= 10:
+                break
 
         prediction_value = base_value + sum(vals)
 
@@ -422,7 +521,11 @@ async def explain_prediction(data: PatientData):
             prediction_value=round(float(prediction_value), 4)
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Explanation error: {str(e)}")
+
+
 
 
 # =============================================
@@ -460,48 +563,26 @@ def _generate_scenarios(data: PatientData, shap_factors: list) -> list:
 
     scenario_definitions = [
         {
-            "field": "PreRBMI",
-            "condition": lambda d: d["PreRBMI"] > 25,
-            "modify": lambda d: {**d, "PreRBMI": 22.0},
-            "title": "Healthy BMI",
-            "desc": lambda d: f"What if your BMI was healthy (22.0) instead of {d['PreRBMI']:.1f}?",
-            "change": lambda d: f"BMI: {d['PreRBMI']:.1f} → 22.0",
-            "icon": "⚖️",
-            "orig_val": lambda d: f"{d['PreRBMI']:.1f}",
-            "new_val": lambda d: "22.0",
+            "field": "PostRgroupname",
+            "condition": lambda d: d["PostRgroupname"] == 2,
+            "modify": lambda d: {**d, "PostRgroupname": 1},
+            "title": "Join Yoga Intervention",
+            "desc": lambda d: "What if you joined the yoga intervention group instead of control?",
+            "change": lambda d: "Group: Control → Yoga",
+            "icon": "🧘",
+            "orig_val": lambda d: "Control",
+            "new_val": lambda d: "Yoga",
         },
         {
-            "field": "PreBLFBS",
-            "condition": lambda d: d["PreBLFBS"] > 100,
-            "modify": lambda d: {**d, "PreBLFBS": 90.0},
-            "title": "Normal Fasting Sugar",
-            "desc": lambda d: f"What if your fasting sugar was normal (90) instead of {d['PreBLFBS']:.0f} mg/dL?",
-            "change": lambda d: f"FBS: {d['PreBLFBS']:.0f} → 90 mg/dL",
-            "icon": "🩸",
-            "orig_val": lambda d: f"{d['PreBLFBS']:.0f} mg/dL",
-            "new_val": lambda d: "90 mg/dL",
-        },
-        {
-            "field": "PreBLPPBS",
-            "condition": lambda d: d["PreBLPPBS"] > 140,
-            "modify": lambda d: {**d, "PreBLPPBS": 130.0},
-            "title": "Normal Post-Prandial Sugar",
-            "desc": lambda d: f"What if your PPBS was normal (130) instead of {d['PreBLPPBS']:.0f} mg/dL?",
-            "change": lambda d: f"PPBS: {d['PreBLPPBS']:.0f} → 130 mg/dL",
-            "icon": "🍽️",
-            "orig_val": lambda d: f"{d['PreBLPPBS']:.0f} mg/dL",
-            "new_val": lambda d: "130 mg/dL",
-        },
-        {
-            "field": "PreBLHBA1C",
-            "condition": lambda d: d["PreBLHBA1C"] > 6.5,
-            "modify": lambda d: {**d, "PreBLHBA1C": 5.7},
-            "title": "Normal Pre-Treatment HbA1c",
-            "desc": lambda d: f"What if your starting HbA1c was near-normal (5.7%) instead of {d['PreBLHBA1C']:.1f}%?",
-            "change": lambda d: f"HbA1c: {d['PreBLHBA1C']:.1f}% → 5.7%",
-            "icon": "📉",
-            "orig_val": lambda d: f"{d['PreBLHBA1C']:.1f}%",
-            "new_val": lambda d: "5.7%",
+            "field": "PostRgroupname",
+            "condition": lambda d: d["PostRgroupname"] == 1,
+            "modify": lambda d: {**d, "PostRgroupname": 2},
+            "title": "Standard Care Only",
+            "desc": lambda d: "What if you stopped the yoga intervention and only received standard care?",
+            "change": lambda d: "Group: Yoga → Control",
+            "icon": "🏥",
+            "orig_val": lambda d: "Yoga",
+            "new_val": lambda d: "Control",
         },
         {
             "field": "current_smoking",
@@ -526,70 +607,59 @@ def _generate_scenarios(data: PatientData, shap_factors: list) -> list:
             "new_val": lambda d: "No",
         },
         {
-            "field": "PreRsystolicfirst",
-            "condition": lambda d: d["PreRsystolicfirst"] > 130,
-            "modify": lambda d: {**d, "PreRsystolicfirst": 120.0, "PreRdiastolicfirst": 80.0},
-            "title": "Normal Blood Pressure",
-            "desc": lambda d: f"What if your BP was normal (120/80) instead of {d['PreRsystolicfirst']:.0f}/{d['PreRdiastolicfirst']:.0f}?",
-            "change": lambda d: f"BP: {d['PreRsystolicfirst']:.0f}/{d['PreRdiastolicfirst']:.0f} → 120/80",
-            "icon": "💊",
-            "orig_val": lambda d: f"{d['PreRsystolicfirst']:.0f}/{d['PreRdiastolicfirst']:.0f}",
-            "new_val": lambda d: "120/80 mmHg",
-        },
-        {
-            "field": "PreBLCHOLESTEROL",
-            "condition": lambda d: d["PreBLCHOLESTEROL"] > 200,
-            "modify": lambda d: {**d, "PreBLCHOLESTEROL": 180.0},
-            "title": "Normal Cholesterol",
-            "desc": lambda d: f"What if your cholesterol was under control (180) instead of {d['PreBLCHOLESTEROL']:.0f}?",
-            "change": lambda d: f"Cholesterol: {d['PreBLCHOLESTEROL']:.0f} → 180 mg/dL",
-            "icon": "❤️",
-            "orig_val": lambda d: f"{d['PreBLCHOLESTEROL']:.0f} mg/dL",
-            "new_val": lambda d: "180 mg/dL",
-        },
-        {
-            "field": "PreBLTRIGLYCERIDES",
-            "condition": lambda d: d["PreBLTRIGLYCERIDES"] > 150,
-            "modify": lambda d: {**d, "PreBLTRIGLYCERIDES": 130.0},
-            "title": "Normal Triglycerides",
-            "desc": lambda d: f"What if your triglycerides were normal (130) instead of {d['PreBLTRIGLYCERIDES']:.0f}?",
-            "change": lambda d: f"Triglycerides: {d['PreBLTRIGLYCERIDES']:.0f} → 130 mg/dL",
-            "icon": "🧪",
-            "orig_val": lambda d: f"{d['PreBLTRIGLYCERIDES']:.0f} mg/dL",
-            "new_val": lambda d: "130 mg/dL",
-        },
-        {
-            "field": "PostRgroupname",
-            "condition": lambda d: d["PostRgroupname"] == 2,
-            "modify": lambda d: {**d, "PostRgroupname": 1},
-            "title": "Join Yoga Intervention",
-            "desc": lambda d: "What if you joined the yoga intervention group instead of control?",
-            "change": lambda d: "Group: Control → Yoga",
-            "icon": "🧘",
-            "orig_val": lambda d: "Control",
-            "new_val": lambda d: "Yoga",
-        },
-        {
-            "field": "PostRgroupname",
-            "condition": lambda d: d["PostRgroupname"] == 1,
-            "modify": lambda d: {**d, "PostRgroupname": 2},
-            "title": "Standard Care Only",
-            "desc": lambda d: "What if you stopped the yoga intervention and only received standard care?",
-            "change": lambda d: "Group: Yoga → Control",
-            "icon": "🏥",
-            "orig_val": lambda d: "Yoga",
-            "new_val": lambda d: "Control",
-        },
-        {
             "field": "PreRsleepquality",
-            "condition": lambda d: d["PreRsleepquality"] > 2,
+            "condition": lambda d: d["PreRsleepquality"] > 1,
             "modify": lambda d: {**d, "PreRsleepquality": 1.0},
-            "title": "Improve Sleep Quality",
-            "desc": lambda d: "What if your sleep quality improved to good?",
-            "change": lambda d: f"Sleep: {d['PreRsleepquality']:.0f} → 1 (Good)",
+            "title": "Improve Sleep",
+            "desc": lambda d: "What if your sleep quality improved to Good?",
+            "change": lambda d: f"Sleep: {'Poor' if d['PreRsleepquality']==4 else 'Fair'} → Good",
             "icon": "😴",
-            "orig_val": lambda d: f"{d['PreRsleepquality']:.0f} (Poor)",
-            "new_val": lambda d: "1 (Good)",
+            "orig_val": lambda d: "Current",
+            "new_val": lambda d: "Good",
+        },
+        {
+            "field": "PreRmoderate",
+            "condition": lambda d: d["PreRmoderate"] < 4,
+            "modify": lambda d: {**d, "PreRmoderate": 5.0, "PreRmoderateduration": 2.0},
+            "title": "More Physical Activity",
+            "desc": lambda d: "What if you did moderate activity 4-5 times a week?",
+            "change": lambda d: "Activity: Current → 4-5x/week",
+            "icon": "🏃",
+            "orig_val": lambda d: "Current",
+            "new_val": lambda d: "4-5x/week",
+        },
+        {
+            "field": "PreRlessvegetable",
+            "condition": lambda d: d["PreRlessvegetable"] > 1,
+            "modify": lambda d: {**d, "PreRlessvegetable": 1.0},
+            "title": "Eat More Vegetables",
+            "desc": lambda d: "What if you usually ate vegetables?",
+            "change": lambda d: "Vegetables: Less → Usually",
+            "icon": "🥗",
+            "orig_val": lambda d: "Current",
+            "new_val": lambda d: "Usually",
+        },
+        {
+            "field": "PreRsweet",
+            "condition": lambda d: d["PreRsweet"] < 3,
+            "modify": lambda d: {**d, "PreRsweet": 3.0},
+            "title": "Reduce Sweets",
+            "desc": lambda d: "What if you rarely ate sweets?",
+            "change": lambda d: "Sweets: Often/Sometimes → Rarely",
+            "icon": "🍬",
+            "orig_val": lambda d: "Current",
+            "new_val": lambda d: "Rarely",
+        },
+        {
+            "field": "PreRfriedfood",
+            "condition": lambda d: d["PreRfriedfood"] < 3,
+            "modify": lambda d: {**d, "PreRfriedfood": 3.0},
+            "title": "Reduce Fried Foods",
+            "desc": lambda d: "What if you rarely ate fried foods?",
+            "change": lambda d: "Fried Foods: Often/Sometimes → Rarely",
+            "icon": "🍟",
+            "orig_val": lambda d: "Current",
+            "new_val": lambda d: "Rarely",
         },
     ]
 
@@ -598,6 +668,11 @@ def _generate_scenarios(data: PatientData, shap_factors: list) -> list:
         if defn["condition"](original_dict):
             modified_dict = defn["modify"](original_dict)
             modified_hba1c = _predict_hba1c(modified_dict)
+
+            # CLINICAL GUARDRAIL: A healthy behavior should not INCREASE HbA1c
+            original_hba1c_for_validation = _predict_hba1c(original_dict)
+            if modified_hba1c >= original_hba1c_for_validation:
+                continue
 
             scenarios.append({
                 "scenario_id": scenario_id,
@@ -676,34 +751,34 @@ async def whatif_analysis(data: PatientData):
         combined_risk_level = None
         if len(scenarios) > 1:
             combined_dict = data.model_dump()
+            valid_fields = [s.factor_changed for s in scenarios]
+
+            # Apply all valid modifications
+            for defn in _generate_scenarios.__closure__[0].cell_contents if hasattr(_generate_scenarios, '__closure__') and _generate_scenarios.__closure__ else []:
+                pass # Can't access definitions easily this way. We will just use the returned scenarios list.
+
+            # Better combined logic: apply changes directly
             for s in raw_scenarios:
                 field = s["factor_changed"]
-                if field == "PreRBMI":
-                    combined_dict["PreRBMI"] = 22.0
-                elif field == "PreBLFBS":
-                    combined_dict["PreBLFBS"] = 90.0
-                elif field == "PreBLPPBS":
-                    combined_dict["PreBLPPBS"] = 130.0
-                elif field == "PreBLHBA1C":
-                    combined_dict["PreBLHBA1C"] = 5.7
-                elif field == "current_smoking":
-                    combined_dict["current_smoking"] = 0
-                elif field == "current_alcohol":
-                    combined_dict["current_alcohol"] = 0
-                elif field == "PreRsystolicfirst":
-                    combined_dict["PreRsystolicfirst"] = 120.0
-                    combined_dict["PreRdiastolicfirst"] = 80.0
-                elif field == "PreBLCHOLESTEROL":
-                    combined_dict["PreBLCHOLESTEROL"] = 180.0
-                elif field == "PreBLTRIGLYCERIDES":
-                    combined_dict["PreBLTRIGLYCERIDES"] = 130.0
-                elif field == "PostRgroupname":
-                    # For the combined "best possible" scenario, always apply the better group (Yoga=1)
+                if field == "current_smoking": combined_dict["current_smoking"] = 0
+                elif field == "current_alcohol": combined_dict["current_alcohol"] = 0
+                elif field == "PreRsleepquality": combined_dict["PreRsleepquality"] = 1.0
+                elif field == "PostRgroupname": 
+                    # If field was changed, set combined to Yoga (1) since it's the intervention intended to improve HbA1c
                     combined_dict["PostRgroupname"] = 1
-                elif field == "PreRsleepquality":
-                    combined_dict["PreRsleepquality"] = 1.0
+                elif field == "PreRmoderate":
+                    combined_dict["PreRmoderate"] = 5.0
+                    combined_dict["PreRmoderateduration"] = 2.0
+                elif field == "PreRlessvegetable": combined_dict["PreRlessvegetable"] = 1.0
+                elif field == "PreRsweet": combined_dict["PreRsweet"] = 3.0
+                elif field == "PreRfriedfood": combined_dict["PreRfriedfood"] = 3.0
 
             combined_hba1c = _predict_hba1c(combined_dict)
+
+            # Clinical guardrail: if combined is somehow worse, fallback to best individual
+            if combined_hba1c >= original_hba1c:
+                combined_hba1c = min([s.modified_hba1c for s in scenarios])
+            
             combined_risk_level, _ = get_risk_level(combined_hba1c)
 
         return WhatIfResponse(
