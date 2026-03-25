@@ -105,7 +105,6 @@ class PatientData(BaseModel):
     current_smoking: int = Field(..., ge=0, le=1, description="Currently smokes: 1=Yes, 0=No")
     current_alcohol: int = Field(..., ge=0, le=1, description="Currently drinks alcohol: 1=Yes, 0=No")
     PreRsleepquality: float = Field(..., description="Sleep quality (1=Good to 4=Poor)")
-    PreRmildactivity: float = Field(..., description="Mild activity frequency (1-6)")
     PreRmildactivityduration: float = Field(..., description="Mild activity duration code (1-5)")
     PreRmoderate: float = Field(..., description="Moderate activity frequency (1-6)")
     PreRmoderateduration: float = Field(..., description="Moderate activity duration code (0-5)")
@@ -146,7 +145,6 @@ class PatientData(BaseModel):
                 "current_smoking": 0,
                 "current_alcohol": 0,
                 "PreRsleepquality": 2.0,
-                "PreRmildactivity": 4.0,
                 "PreRmildactivityduration": 3.0,
                 "PreRmoderate": 2.0,
                 "PreRmoderateduration": 2.0,
@@ -379,6 +377,91 @@ async def predict_hba1c(data: PatientData):
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 
+import math # Adding math import at top level
+
+# =============================================
+# CLINICAL GUARDRAILS FOR SHAP
+# =============================================
+
+HIDE_ALWAYS = []
+FAMILY_HISTORY_VARS = ['PreRdiafather', 'PreRdiamother', 'PreRdiabrother', 'PreRdiasister']
+YES_VALUES = [1, 1.0, "1", "1.0"]
+NO_VALUES = [0, 0.0, "0", "0.0"]
+
+THRESHOLD_RANGES = {
+    "PreRBMI": {"high": 25},
+    "PreRwaist": {"high": 90}
+}
+THRESHOLDS = {
+    "PreRsystolicfirst": 130,
+    "PreRdiastolicfirst": 80,
+    "PreBLCHOLESTEROL": 200,
+    "PreBLTRIGLYCERIDES": 150,
+    "PreBLFBS": 100,
+    "PreBLPPBS": 140
+}
+
+def is_missing(value):
+    return value is None or (isinstance(value, float) and math.isnan(value))
+
+def shap_direction(shap_value):
+    if shap_value > 0:
+        return "increase"
+    elif shap_value < 0:
+        return "decrease"
+    return None
+
+def directional_guardrail(feature, value, shap_value):
+    direction = shap_direction(shap_value)
+
+    if direction is None:
+        return "hide"
+
+    if is_missing(value):
+        return "hide"
+
+    if feature in HIDE_ALWAYS:
+        return "hide"
+
+    # Clean OHE suffix to match the base feature
+    base_feature = feature.split('_')[0] if feature.split('_')[0] == feature.split('_')[0] and not feature.startswith("group_x_") else feature
+    # A more robust cleanup:
+    base_feature = feature
+    for og_feat in list(THRESHOLD_RANGES.keys()) + list(THRESHOLDS.keys()) + FAMILY_HISTORY_VARS + ["PostBLAge"]:
+        if feature.startswith(og_feat):
+            base_feature = og_feat
+            break
+
+    # Age
+    if base_feature == "PostBLAge":
+        if value > 60 and direction == "decrease":
+            return "hide"
+        return direction
+
+    # Family history
+    if base_feature in FAMILY_HISTORY_VARS:
+        if value in NO_VALUES and direction == "increase":
+            return "hide"
+        if value in YES_VALUES and direction == "decrease":
+            return "hide"
+        return direction
+
+    # BMI & Waist (only high restriction)
+    if base_feature in THRESHOLD_RANGES:
+        high = THRESHOLD_RANGES[base_feature]["high"]
+        if value >= high and direction == "decrease":
+            return "hide"
+        return direction
+
+    # BP, Cholesterol, Triglycerides (same rule)
+    if base_feature in THRESHOLDS:
+        threshold = THRESHOLDS[base_feature]
+        if value >= threshold and direction == "decrease":
+            return "hide"
+        return direction
+
+    return direction
+
 @app.post("/explain", response_model=ExplainResponse, tags=["Explainability"])
 async def explain_prediction(data: PatientData):
     """Explain factors contributing to the HbA1c prediction using SHAP."""
@@ -386,6 +469,7 @@ async def explain_prediction(data: PatientData):
         raise HTTPException(status_code=503, detail="Model not loaded. Run train_model.py first.")
 
     try:
+        input_dict = data.model_dump()
         input_df = prepare_input_dataframe(data)
         processed_array = preprocessor.transform(input_df)
         processed_array = _add_interaction_features(processed_array)
@@ -406,13 +490,28 @@ async def explain_prediction(data: PatientData):
         feature_impact.sort(key=lambda x: abs(x[1]), reverse=True)
 
         top_factors = []
-        for feat, impact in feature_impact[:10]:
+        for feat, impact in feature_impact:
+            # Find original input value corresponding to the feature
+            orig_val = 0
+            for k, v in input_dict.items():
+                if feat.startswith(k):
+                    orig_val = v
+                    break
+            
+            # Apply clinical guardrail
+            action = directional_guardrail(feat, orig_val, float(impact))
+            if action == "hide":
+                continue
+
             top_factors.append(FactorImpact(
                 feature=feat,
                 impact=round(float(impact), 4),
                 direction="Increases HbA1c" if impact > 0 else "Reduces HbA1c",
                 interpretation=interpret_feature(feat, impact)
             ))
+            
+            if len(top_factors) >= 10:
+                break
 
         prediction_value = base_value + sum(vals)
 
@@ -422,7 +521,11 @@ async def explain_prediction(data: PatientData):
             prediction_value=round(float(prediction_value), 4)
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Explanation error: {str(e)}")
+
+
 
 
 # =============================================

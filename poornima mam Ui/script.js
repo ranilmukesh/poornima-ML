@@ -114,10 +114,9 @@ function collectFormData() {
         PreRdiasister: parseInt(document.querySelector('input[name="PreRdiasister"]:checked')?.value || '0'),
         current_smoking: parseInt(document.querySelector('input[name="current_smoking"]:checked')?.value || '0'),
         current_alcohol: parseInt(document.querySelector('input[name="current_alcohol"]:checked')?.value || '0'),
-        PreRsleepquality: parseFloat(document.getElementById('PreRsleepquality').value),
-        PreRmildactivity: parseFloat(document.getElementById('PreRmildactivity').value),
-        PreRmildactivityduration: parseFloat(document.getElementById('PreRmildactivityduration').value),
-        PreRmoderate: parseFloat(document.getElementById('PreRmoderate').value),
+        PreRsleepquality: Number(document.getElementById('PreRsleepquality').value),
+        PreRmildactivityduration: Number(document.getElementById('PreRmildactivityduration').value),
+        PreRmoderate: Number(document.getElementById('PreRmoderate').value),
         PreRmoderateduration: parseFloat(document.getElementById('PreRmoderateduration').value),
         PreRvigorous: parseFloat(document.getElementById('PreRvigorous').value),
         PreRvigorousduration: parseFloat(document.getElementById('PreRvigorousduration').value),
@@ -166,7 +165,6 @@ function validateFormData(data) {
     if (!dropSel('PreRsleepquality', 'sleep quality')) return false;
     if (!dropSel('PostRgroupname', 'a care plan')) return false;
     // Physical Activity
-    if (!dropSel('PreRmildactivity', 'mild activity frequency')) return false;
     if (!dropSel('PreRmildactivityduration', 'mild activity duration')) return false;
     if (!dropSel('PreRmoderate', 'moderate activity frequency')) return false;
     if (!dropSel('PreRmoderateduration', 'moderate activity duration')) return false;
@@ -404,7 +402,6 @@ function formatFeatureName(name) {
         "PreRdiasister": "Sister's diabetes history",
 
         "PreRsleepquality": "Sleep quality",
-        "PreRmildactivity": "Mild physical activity",
         "PreRmildactivityduration": "Mild activity duration",
         "PreRmoderate": "Moderate physical activity",
         "PreRmoderateduration": "Moderate activity duration",
@@ -624,7 +621,6 @@ function displayInputSummary(formData) {
         ['Alcohol', formData.current_alcohol ? 'Yes' : 'No'],
         ['Sleep Quality', sleepMap[formData.PreRsleepquality] || '—'],
         ['Care Plan', careMap[formData.PostRgroupname] || '—'],
-        ['Mild Activity (freq)', freqMap[formData.PreRmildactivity] || '—'],
         ['Mild Activity (dur)', durMap[formData.PreRmildactivityduration] || '—'],
         ['Moderate Activity (freq)', freqMap[formData.PreRmoderate] || '—'],
         ['Moderate Activity (dur)', durMap[formData.PreRmoderateduration] || '—'],
@@ -711,7 +707,6 @@ function fillDemoData() {
     document.getElementById('PreRsleepquality').value = '2';
     // Care plan - select dropdown
     document.getElementById('PostRgroupname').value = '1';
-    document.getElementById('PreRmildactivity').value = '4';
     document.getElementById('PreRmildactivityduration').value = '3';
     document.getElementById('PreRmoderate').value = '2';
     document.getElementById('PreRmoderateduration').value = '2';
@@ -787,7 +782,7 @@ function applyJsonToForm(json) {
     const directFields = [
         'PostBLAge', 'PreRmaritalstatus', 'PreReducation', 'PreRpresentoccupation',
         'PreRsleepquality', 'PostRgroupname',
-        'PreRmildactivity', 'PreRmildactivityduration', 'PreRmoderate', 'PreRmoderateduration',
+        'PreRmildactivityduration', 'PreRmoderate', 'PreRmoderateduration',
         'PreRvigorous', 'PreRvigorousduration',
         'PreRskipbreakfast', 'PreRlessfruit', 'PreRlessvegetable',
         'PreRmilk', 'PreRmeat', 'PreRfriedfood', 'PreRsweet',
