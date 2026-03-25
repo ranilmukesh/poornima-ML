@@ -20,7 +20,6 @@ const elements = {
     riskLevel: document.getElementById('riskLevel'),
     riskConfidence: document.getElementById('riskConfidence'),
     progressRing: document.getElementById('progressRing'),
-    meterPointer: document.getElementById('meterPointer'),
     factorsContainer: document.getElementById('factorsContainer'),
     recommendationsGrid: document.getElementById('recommendationsGrid'),
     whatifSection: document.getElementById('whatifSection'),
@@ -230,10 +229,6 @@ function animateRiskScore(prediction) {
         elements.riskLevel.textContent = labelMap[riskLevel] || riskLevel;
     }, 500);
 
-    // Meter pointer
-    setTimeout(() => {
-        elements.meterPointer.style.left = `${normalizedPct}%`;
-    }, 100);
 }
 
 /**
