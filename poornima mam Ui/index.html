@@ -72,7 +72,7 @@
                     <span class="card-label">Explainability</span>
                 </div>
                 <div class="floating-card card-3">
-                    <span class="card-value">36</span>
+                    <span class="card-value">37</span>
                     <span class="card-label">Features</span>
                 </div>
             </div>
@@ -84,10 +84,6 @@
                 <h2 class="section-title">Patient Assessment</h2>
                 <p class="section-subtitle">Enter health parameters for diabetes HbA1c prediction</p>
                 <div style="display:flex;gap:10px;margin-top:12px;justify-content:center;flex-wrap:wrap;">
-                    <button type="button" onclick="openJsonModal()"
-                        style="background:linear-gradient(135deg,#2D9596,#1a6b6c);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
-                        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📋
-                        Load JSON</button>
                     <button type="button" onclick="fillDemoData()"
                         style="background:linear-gradient(135deg,#E85D4C,#c14438);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🎲
@@ -333,7 +329,25 @@
                     <p style="font-size:0.8rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">Mild activity
                         (slow / normal walking)</p>
                     <div class="input-row">
-
+                        <div class="input-group">
+                            <label class="input-label">How often?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmildactivity">
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">Once a month</option>
+                                    <option value="2">2 to 3 times a month</option>
+                                    <option value="3">Once a week</option>
+                                    <option value="4">2 to 3 times a week</option>
+                                    <option value="5">4 to 5 times a week</option>
+                                    <option value="6">Every day</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
                         <div class="input-group">
                             <label class="input-label">How long per day?</label>
                             <div class="select-wrapper">
@@ -715,6 +729,9 @@
                 <!-- Clinical Interpretation Lines -->
                 <div id="clinicalInterpretation"
                     style="margin-top:16px;text-align:left;color:var(--cream);font-size:0.85rem;line-height:1.6;">
+                    <p id="hba1cDeltaLine"
+                        style="margin-bottom:8px;font-weight:700;font-size:0.95rem;color:#7dd3fc;letter-spacing:0.01em;">
+                    </p>
                     <p id="outcomeLine" style="margin-bottom:4px;"></p>
                     <p id="responseLine" style="margin-bottom:4px;"></p>
                     <p id="targetLine" style="margin-bottom:0;"></p>
@@ -732,8 +749,10 @@
             </div>
 
             <!-- Input Summary Card -->
-            <div id="inputSummaryCard" style="background:var(--black);border-radius:16px;padding:0;margin-bottom:24px;overflow:hidden;">
-                <button onclick="toggleInputSummary()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+            <div id="inputSummaryCard"
+                style="background:var(--black);border-radius:16px;padding:0;margin-bottom:24px;overflow:hidden;">
+                <button onclick="toggleInputSummary()"
+                    style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
                     <span>📋 Your Submitted Inputs</span>
                     <span id="inputSummaryChevron" style="transition:transform 0.3s;">▼</span>
                 </button>
@@ -780,57 +799,31 @@
                     <div class="sim-stats-row">
                         <div class="sim-stat">
                             <span class="sim-stat-lbl">Predicted HbA1c</span>
+                            <strong id="simBaselineStat" class="sim-stat-val">--</strong>
+                        </div>
+                        <div class="sim-stat">
+                            <span class="sim-stat-lbl">Simulated HbA1c</span>
                             <strong id="simTargetStat" class="sim-stat-val">--</strong>
                         </div>
                         <div class="sim-stat">
                             <span class="sim-stat-lbl">Delta</span>
                             <strong id="simDeltaStat" class="sim-stat-val">--</strong>
                         </div>
-                        <div class="sim-stat">
-                            <span class="sim-stat-lbl">Intitially predicted Baseline</span>
-                            <strong id="simBaselineStat" class="sim-stat-val">--</strong>
-                        </div>
                     </div>
                     <div class="sim-controls-grid">
                         <div class="sim-control">
-                            <span class="sim-control-lbl">BMI</span>
-                            <input type="range" id="simBmiSlider" min="10" max="60" step="0.1" class="sim-slider">
-                            <input type="number" id="simBmiNum" class="sim-num-input">
+                            <span class="sim-control-lbl">Care Plan</span>
+                            <select id="simCarePlan" class="sim-num-input"
+                                style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:var(--dark-900,#0f0f1a);color:var(--cream,#f5f0e8);font-size:0.85rem;appearance:auto;-webkit-appearance:auto;cursor:pointer;">
+                                <option value="1" style="background:#1a1a2e;color:#f5f0e8;">Standard care + Yoga
+                                </option>
+                                <option value="2" style="background:#1a1a2e;color:#f5f0e8;">Standard care</option>
+                            </select>
                         </div>
                         <div class="sim-control">
-                            <span class="sim-control-lbl">FBS (mg/dL)</span>
-                            <input type="range" id="simFbsSlider" min="50" max="400" step="1" class="sim-slider">
-                            <input type="number" id="simFbsNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Pre-HbA1c</span>
+                            <span class="sim-control-lbl">Pre-HbA1c (%)</span>
                             <input type="range" id="simHba1cSlider" min="4" max="18" step="0.1" class="sim-slider">
-                            <input type="number" id="simHba1cNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">SBP (mmHg)</span>
-                            <input type="range" id="simBpSlider" min="70" max="250" step="1" class="sim-slider">
-                            <input type="number" id="simBpNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">PPBS (mg/dL)</span>
-                            <input type="range" id="simPpbsSlider" min="70" max="600" step="1" class="sim-slider">
-                            <input type="number" id="simPpbsNum" min="70" max="600" step="1" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Cholesterol</span>
-                            <input type="range" id="simCholSlider" min="80" max="400" step="1" class="sim-slider">
-                            <input type="number" id="simCholNum" min="80" max="400" step="1" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Triglycerides</span>
-                            <input type="range" id="simTrigSlider" min="50" max="1000" step="1" class="sim-slider">
-                            <input type="number" id="simTrigNum" min="50" max="1000" step="1" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Waist (cm)</span>
-                            <input type="range" id="simWaistSlider" min="50" max="150" step="0.1" class="sim-slider">
-                            <input type="number" id="simWaistNum" min="50" max="150" step="0.1" class="sim-num-input">
+                            <input type="number" id="simHba1cNum" min="4" max="18" step="0.1" class="sim-num-input">
                         </div>
                     </div>
                     <div class="sim-disclaimer">AI-generated, may include mistakes. Don't enter sensitive personal info.

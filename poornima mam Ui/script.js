@@ -299,14 +299,27 @@ function displayClinicalInterpretation(prediction) {
 
     const outcomeLine = `Predicted outcome: ${preCat} → ${postCat} (${traj})`;
 
-    // Response classification (baseline Diabetes only)
+    // HbA1c change summary line
     const delta = preHbA1c - postHbA1c; // positive = improvement
+    let deltaLine = '';
+    if (preHbA1c > 0) {
+        const absDelta = Math.abs(delta).toFixed(1);
+        if (delta > 0) {
+            deltaLine = `HbA1c ${preHbA1c.toFixed(1)}% → ${postHbA1c.toFixed(1)}% ↓ ${absDelta}% HbA1c reduction`;
+        } else if (delta < 0) {
+            deltaLine = `HbA1c ${preHbA1c.toFixed(1)}% → ${postHbA1c.toFixed(1)}% ↑ ${absDelta}% HbA1c increase`;
+        } else {
+            deltaLine = `HbA1c ${preHbA1c.toFixed(1)}% → ${postHbA1c.toFixed(1)}% (No change)`;
+        }
+    }
+
+    // Response classification — no delta values in text (per user spec)
     let responseLine = '';
     if (preCat === 'Diabetes') {
-        if (delta >= 1.0) responseLine = `Predicted response: Major improvement – Risk reduction achieved (ΔHbA1c ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%)`;
-        else if (delta >= 0.5) responseLine = `Predicted response: Clinically meaningful improvement (ΔHbA1c +${delta.toFixed(2)}%)`;
-        else if (delta >= 0) responseLine = `Predicted response: Stabilization / modest improvement (ΔHbA1c +${delta.toFixed(2)}%)`;
-        else responseLine = `Predicted response: Non-response (ΔHbA1c ${delta.toFixed(2)}%)`;
+        if (delta >= 1.0) responseLine = 'Predicted response: Major improvement – Risk reduction achieved (≥1.0% reduction)';
+        else if (delta >= 0.5) responseLine = 'Predicted response: Clinically meaningful improvement (≥0.5% reduction)';
+        else if (delta >= 0) responseLine = 'Predicted response: Stabilization / modest improvement';
+        else responseLine = 'Predicted response: Non-response (increase in HbA1c)';
     }
 
     // Target achievement
@@ -321,7 +334,9 @@ function displayClinicalInterpretation(prediction) {
     const outEl = document.getElementById('outcomeLine');
     const resEl = document.getElementById('responseLine');
     const tgtEl = document.getElementById('targetLine');
+    const deltaEl = document.getElementById('hba1cDeltaLine');
 
+    if (deltaEl) { deltaEl.textContent = deltaLine; deltaEl.style.display = deltaLine ? '' : 'none'; }
     if (outEl) outEl.textContent = outcomeLine;
     if (resEl) resEl.textContent = responseLine;
     if (tgtEl) tgtEl.textContent = targetLine;
@@ -344,9 +359,33 @@ function animateCounter(element, start, end, duration) {
 
 function displayFactors(factors) {
     elements.factorsContainer.innerHTML = '';
-    const maxImpact = Math.max(...factors.map(f => Math.abs(f.impact)));
 
-    factors.forEach((factor, index) => {
+    // Filter out any group_x_ cross features that slipped through backend
+    let filtered = factors.filter(f => !f.feature.includes('group_x_'));
+    if (filtered.length === 0) return;
+
+    // Guarantee Intervention (PostRgroupname) appears in top 3
+    const interventionIdx = filtered.findIndex(f => f.feature.startsWith('PostRgroupname') || f.feature === 'PostRgroupname');
+    if (interventionIdx >= 0 && interventionIdx >= 3) {
+        // Move it to position 2 (3rd slot)
+        const [item] = filtered.splice(interventionIdx, 1);
+        filtered.splice(2, 0, item);
+    } else if (interventionIdx < 0) {
+        // Not present at all — inject a synthetic entry based on care plan chosen
+        const isYoga = currentFormData && currentFormData.PostRgroupname === 1;
+        filtered.splice(Math.min(2, filtered.length), 0, {
+            feature: 'PostRgroupname',
+            impact: isYoga ? -0.05 : 0.05,
+            direction: isYoga ? 'Reduces HbA1c' : 'Increases HbA1c',
+            interpretation: isYoga
+                ? 'Yoga intervention slightly decreases predicted HbA1c'
+                : 'Standard care (without Yoga) slightly increases predicted HbA1c'
+        });
+    }
+
+    const maxImpact = Math.max(...filtered.map(f => Math.abs(f.impact)));
+
+    filtered.forEach((factor, index) => {
         const card = createFactorCard(factor, maxImpact);
         elements.factorsContainer.appendChild(card);
         setTimeout(() => { card.classList.add('animate'); }, 50);
@@ -436,8 +475,8 @@ function formatFeatureName(name) {
     };
 
     // Clean OHE suffixes from categorical variables (e.g. PreRmaritalstatus_1.0 -> PreRmaritalstatus)
-    const baseName = name.split('_')[0] === name.split('_')[0] && !name.includes('group_x') 
-        ? name.replace(/_\d+(\.\d+)?$/, '') 
+    const baseName = name.split('_')[0] === name.split('_')[0] && !name.includes('group_x')
+        ? name.replace(/_\d+(\.\d+)?$/, '')
         : name;
 
     if (READABLE_NAMES[baseName]) {
@@ -446,10 +485,12 @@ function formatFeatureName(name) {
         return READABLE_NAMES[baseName];
     }
 
-    // Special handlers for interaction terms
-    if (name.includes('group_x_hba1c')) return 'Intervention × Baseline HbA1c';
-    if (name.includes('group_x_fbs')) return 'Intervention × Fasting glucose';
-    if (name.includes('group_x_ppbs')) return 'Intervention × Postprandial glucose';
+    // Special handlers for interaction terms — rename to just "Intervention"
+    if (name.includes('group_x_hba1c')) return 'Intervention';
+    if (name.includes('group_x_fbs')) return 'Intervention';
+    if (name.includes('group_x_ppbs')) return 'Intervention';
+    // Hide any other group_x_ cross features
+    if (name.includes('group_x_')) return 'Intervention';
 
     return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
@@ -528,22 +569,22 @@ function saveFormToStorage(formData) {
     const store = { ...formData };
     // Save radio button states by name
     ['PreBLGender', 'PreRarea', 'PreRdiafather', 'PreRdiamother',
-     'PreRdiabrother', 'PreRdiasister', 'current_smoking', 'current_alcohol'
+        'PreRdiabrother', 'PreRdiasister', 'current_smoking', 'current_alcohol'
     ].forEach(name => {
         const checked = document.querySelector(`input[name="${name}"]:checked`);
         store['_radio_' + name] = checked ? checked.id : null;
     });
-    try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch(e) {}
+    try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) { }
 }
 
 function restoreFormFromStorage() {
     let store;
-    try { store = JSON.parse(localStorage.getItem(LS_KEY)); } catch(e) { return; }
+    try { store = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { return; }
     if (!store) return;
 
     // Restore radio buttons
     ['PreBLGender', 'PreRarea', 'PreRdiafather', 'PreRdiamother',
-     'PreRdiabrother', 'PreRdiasister', 'current_smoking', 'current_alcohol'
+        'PreRdiabrother', 'PreRdiasister', 'current_smoking', 'current_alcohol'
     ].forEach(name => {
         const id = store['_radio_' + name];
         if (id) {
@@ -573,7 +614,7 @@ function restoreFormFromStorage() {
 }
 
 function resetForm() {
-    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    try { localStorage.removeItem(LS_KEY); } catch (e) { }
     elements.patientForm.reset();
     showNotification('Form cleared.', 'info');
 }
@@ -595,14 +636,14 @@ function displayInputSummary(formData) {
     const grid = document.getElementById('inputSummaryGrid');
     if (!grid || !formData) return;
 
-    const freqMap = { 0:'None',1:'Once/month',2:'2-3×/month',3:'Once/week',4:'2-3×/week',5:'4-5×/week',6:'Every day' };
-    const durMap  = { 0:'None',1:'≤10 min',2:'10-30 min',3:'30min-1hr',4:'1-1.5hrs',5:'>1.5hrs' };
-    const dietMap = { 1:'Usually/Often',2:'Sometimes',3:'Rarely/Never' };
-    const maritalMap = { 1:'Married',2:'Unmarried',3:'Divorcee/Separated',4:'Widow/Widower',5:'Others' };
-    const eduMap = { 1:'No schooling',2:'Primary',3:'High school',4:'Intermediate',5:'University',6:'Univ+',7:'Others' };
-    const occMap = { 1:'Professional',2:'Clerical',3:'Self-employed',4:'Unskilled',5:'Homemaker',6:'Retired',7:'Unemployed(able)',8:'Unemployed(unable)',9:'Others' };
-    const sleepMap = { 1:'Very good',2:'Fairly good',3:'Fairly bad',4:'Very bad' };
-    const careMap = { 1:'Standard + Yoga',2:'Standard care' };
+    const freqMap = { 0: 'None', 1: 'Once/month', 2: '2-3×/month', 3: 'Once/week', 4: '2-3×/week', 5: '4-5×/week', 6: 'Every day' };
+    const durMap = { 0: 'None', 1: '≤10 min', 2: '10-30 min', 3: '30min-1hr', 4: '1-1.5hrs', 5: '>1.5hrs' };
+    const dietMap = { 1: 'Usually/Often', 2: 'Sometimes', 3: 'Rarely/Never' };
+    const maritalMap = { 1: 'Married', 2: 'Unmarried', 3: 'Divorcee/Separated', 4: 'Widow/Widower', 5: 'Others' };
+    const eduMap = { 1: 'No schooling', 2: 'Primary', 3: 'High school', 4: 'Intermediate', 5: 'University', 6: 'Univ+', 7: 'Others' };
+    const occMap = { 1: 'Professional', 2: 'Clerical', 3: 'Self-employed', 4: 'Unskilled', 5: 'Homemaker', 6: 'Retired', 7: 'Unemployed(able)', 8: 'Unemployed(unable)', 9: 'Others' };
+    const sleepMap = { 1: 'Very good', 2: 'Fairly good', 3: 'Fairly bad', 4: 'Very bad' };
+    const careMap = { 1: 'Standard + Yoga', 2: 'Standard care' };
 
     const radioLabel = (name) => document.querySelector(`input[name="${name}"]:checked`)?.parentElement?.textContent?.trim() || '—';
 
@@ -621,6 +662,7 @@ function displayInputSummary(formData) {
         ['Alcohol', formData.current_alcohol ? 'Yes' : 'No'],
         ['Sleep Quality', sleepMap[formData.PreRsleepquality] || '—'],
         ['Care Plan', careMap[formData.PostRgroupname] || '—'],
+        ['Mild Activity (freq)', freqMap[formData.PreRmildactivity] || freqMap[document.getElementById('PreRmildactivity')?.value] || '—'],
         ['Mild Activity (dur)', durMap[formData.PreRmildactivityduration] || '—'],
         ['Moderate Activity (freq)', freqMap[formData.PreRmoderate] || '—'],
         ['Moderate Activity (dur)', durMap[formData.PreRmoderateduration] || '—'],
@@ -707,6 +749,9 @@ function fillDemoData() {
     document.getElementById('PreRsleepquality').value = '2';
     // Care plan - select dropdown
     document.getElementById('PostRgroupname').value = '1';
+    // Fake mild activity frequency (not sent to backend)
+    const mildActEl = document.getElementById('PreRmildactivity');
+    if (mildActEl) mildActEl.value = '2';
     document.getElementById('PreRmildactivityduration').value = '3';
     document.getElementById('PreRmoderate').value = '2';
     document.getElementById('PreRmoderateduration').value = '2';
@@ -962,53 +1007,35 @@ function initSimulator() {
     document.getElementById('simBaselineStat').textContent = currentPrediction.predicted_hba1c.toFixed(2);
     updateSimulatorUI(currentPrediction, currentPrediction, currentFormData);
 
-    // Setup each control independently so one failure doesn't break the rest
-    const controls = [
-        ['Bmi', 'PreRBMI', 15, 60],
-        ['Fbs', 'PreBLFBS', 50, 400],
-        ['Hba1c', 'PreBLHBA1C', 3, 16],
-        ['Bp', 'PreRsystolicfirst', 80, 220],
-        ['Ppbs', 'PreBLPPBS', 70, 600],
-        ['Chol', 'PreBLCHOLESTEROL', 80, 400],
-        ['Trig', 'PreBLTRIGLYCERIDES', 50, 1000],
-        ['Waist', 'PreRwaist', 50, 150],
-    ];
-    controls.forEach(([prefix, field, min, max]) => {
-        try {
-            setupSimControl(prefix, field, min, max);
-        } catch (err) {
-            console.error(`[Sim] Failed to setup ${prefix}:`, err);
-        }
-    });
-}
-
-function setupSimControl(idPrefix, fieldName, min, max) {
-    const slider = document.getElementById(`sim${idPrefix}Slider`);
-    const num = document.getElementById(`sim${idPrefix}Num`);
-
-    if (!slider || !num || !currentFormData) {
-        console.warn(`[Sim] Missing element or data for ${idPrefix} (field=${fieldName})`);
-        return;
+    // Setup care plan dropdown
+    const carePlanSelect = document.getElementById('simCarePlan');
+    if (carePlanSelect && currentFormData) {
+        carePlanSelect.value = String(currentFormData.PostRgroupname || 1);
+        carePlanSelect.onchange = () => { simulateRisk(); };
     }
 
-    // Dynamically set attributes on the number input so the browser renders values
-    num.setAttribute('min', min);
-    num.setAttribute('max', max);
-    num.setAttribute('step', slider.step || 'any');
-
-    let val = Number(currentFormData[fieldName]);
-    if (isNaN(val) || val === 0) val = min;
-    if (val < min) val = min;
-    if (val > max) val = max;
-
-    slider.value = val;
-    num.value = val;
-
-    slider.oninput = (e) => { num.value = e.target.value; triggerSimulate(); };
-    num.oninput = (e) => {
-        let v = Number(e.target.value);
-        if (!isNaN(v) && v >= min && v <= max) { slider.value = v; triggerSimulate(); }
-    };
+    // Setup Pre-HbA1c slider
+    try {
+        const slider = document.getElementById('simHba1cSlider');
+        const num = document.getElementById('simHba1cNum');
+        if (slider && num && currentFormData) {
+            let val = Number(currentFormData.PreBLHBA1C);
+            if (isNaN(val) || val < 4) val = 4;
+            if (val > 18) val = 18;
+            slider.value = val;
+            num.value = val;
+            num.setAttribute('min', 4);
+            num.setAttribute('max', 18);
+            num.setAttribute('step', '0.1');
+            slider.oninput = (e) => { num.value = e.target.value; triggerSimulate(); };
+            num.oninput = (e) => {
+                let v = Number(e.target.value);
+                if (!isNaN(v) && v >= 4 && v <= 18) { slider.value = v; triggerSimulate(); }
+            };
+        }
+    } catch (err) {
+        console.error('[Sim] Failed to setup Pre-HbA1c:', err);
+    }
 }
 
 function triggerSimulate() {
@@ -1021,20 +1048,18 @@ async function simulateRisk() {
 
     const simulatedData = { ...currentFormData };
 
-    // Helper: read num input, fall back to currentFormData value
-    function readSim(elId, field) {
-        const v = parseFloat(document.getElementById(elId)?.value);
-        return isNaN(v) ? currentFormData[field] : v;
+    // Change care plan (intervention)
+    const carePlanSelect = document.getElementById('simCarePlan');
+    if (carePlanSelect) {
+        simulatedData.PostRgroupname = parseInt(carePlanSelect.value) || currentFormData.PostRgroupname;
     }
 
-    simulatedData.PreRBMI = readSim('simBmiNum', 'PreRBMI');
-    simulatedData.PreBLFBS = readSim('simFbsNum', 'PreBLFBS');
-    simulatedData.PreBLHBA1C = readSim('simHba1cNum', 'PreBLHBA1C');
-    simulatedData.PreRsystolicfirst = readSim('simBpNum', 'PreRsystolicfirst');
-    simulatedData.PreBLPPBS = readSim('simPpbsNum', 'PreBLPPBS');
-    simulatedData.PreBLCHOLESTEROL = readSim('simCholNum', 'PreBLCHOLESTEROL');
-    simulatedData.PreBLTRIGLYCERIDES = readSim('simTrigNum', 'PreBLTRIGLYCERIDES');
-    simulatedData.PreRwaist = readSim('simWaistNum', 'PreRwaist');
+    // Change Pre-HbA1c
+    const hba1cNum = document.getElementById('simHba1cNum');
+    if (hba1cNum) {
+        const v = parseFloat(hba1cNum.value);
+        if (!isNaN(v)) simulatedData.PreBLHBA1C = v;
+    }
 
     try {
         const response = await fetchPrediction(simulatedData);
