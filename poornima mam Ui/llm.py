@@ -150,7 +150,7 @@ def start_chat_session(
             max_tokens=16384,
             temperature=0.1,
             top_p=0.95,
-            id="minimaxai/minimax-m2.1"
+            id="nvidia/nemotron-3-super-120b-a12b"
         ),
         description=(
             "You are DiabeSense AI, a warm and empathetic diabetes health assistant "

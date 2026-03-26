@@ -507,7 +507,34 @@ async def explain_prediction(data: PatientData):
                 continue
 
             # Generate interpretation from guardrail direction
-            clean_name = feat.replace('_', ' ').title()
+            # Strip OHE numeric suffix (e.g. PreRsleepquality_2.0 -> PreRsleepquality)
+            import re as _re
+            base_feat = _re.sub(r'_[\d\.]+$', '', feat)
+
+            READABLE = {
+                "PostBLAge": "Age", "PreBLGender": "Gender", "PreRarea": "Residential area",
+                "PreRmaritalstatus": "Marital status", "PreReducation": "Education level",
+                "PreRpresentoccupation": "Current occupation",
+                "PreRdiafather": "Father's diabetes history", "PreRdiamother": "Mother's diabetes history",
+                "PreRdiabrother": "Brother's diabetes history", "PreRdiasister": "Sister's diabetes history",
+                "PreRsleepquality": "Sleep quality",
+                "PreRmildactivityduration": "Mild activity duration",
+                "PreRmoderate": "Moderate physical activity", "PreRmoderateduration": "Moderate activity duration",
+                "PreRvigorous": "Vigorous physical activity", "PreRvigorousduration": "Vigorous activity duration",
+                "PreRskipbreakfast": "Skipping breakfast", "PreRlessfruit": "Low fruit intake",
+                "PreRlessvegetable": "Low vegetable intake", "PreRmilk": "Milk consumption",
+                "PreRmeat": "Meat consumption", "PreRfriedfood": "Fried food intake",
+                "PreRsweet": "Sweet intake", "PreRwaist": "Waist circumference",
+                "PreRBMI": "Body Mass Index (BMI)", "PreRsystolicfirst": "Systolic blood pressure",
+                "PreRdiastolicfirst": "Diastolic blood pressure",
+                "PreBLPPBS": "Postprandial blood glucose", "PreBLFBS": "Fasting blood glucose",
+                "PreBLHBA1C": "Baseline HbA1c", "PreBLCHOLESTEROL": "Total cholesterol",
+                "PreBLTRIGLYCERIDES": "Triglycerides", "Diabetic_Duration": "Duration of diabetes (years)",
+                "PostRgroupname": "Intervention", "current_alcohol": "Alcohol use",
+                "current_smoking": "Smoking status",
+            }
+            clean_name = READABLE.get(base_feat, base_feat.replace('_', ' ').title())
+
             abs_impact = abs(impact)
             intensity = "significantly" if abs_impact > 0.3 else ("moderately" if abs_impact > 0.1 else "slightly")
             if action == "increase":

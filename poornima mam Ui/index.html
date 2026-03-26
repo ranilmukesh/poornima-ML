@@ -329,7 +329,25 @@
                     <p style="font-size:0.8rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">Mild activity
                         (slow / normal walking)</p>
                     <div class="input-row">
-
+                        <div class="input-group">
+                            <label class="input-label">How often?</label>
+                            <div class="select-wrapper">
+                                <select id="PreRmildactivity">
+                                    <option value="">Select</option>
+                                    <option value="0">None</option>
+                                    <option value="1">Once a month</option>
+                                    <option value="2">2 to 3 times a month</option>
+                                    <option value="3">Once a week</option>
+                                    <option value="4">2 to 3 times a week</option>
+                                    <option value="5">4 to 5 times a week</option>
+                                    <option value="6">Every day</option>
+                                </select>
+                                <span class="select-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg></span>
+                            </div>
+                        </div>
                         <div class="input-group">
                             <label class="input-label">How long per day?</label>
                             <div class="select-wrapper">
@@ -728,8 +746,10 @@
             </div>
 
             <!-- Input Summary Card -->
-            <div id="inputSummaryCard" style="background:var(--black);border-radius:16px;padding:0;margin-bottom:24px;overflow:hidden;">
-                <button onclick="toggleInputSummary()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+            <div id="inputSummaryCard"
+                style="background:var(--black);border-radius:16px;padding:0;margin-bottom:24px;overflow:hidden;">
+                <button onclick="toggleInputSummary()"
+                    style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
                     <span>📋 Your Submitted Inputs</span>
                     <span id="inputSummaryChevron" style="transition:transform 0.3s;">▼</span>
                 </button>
@@ -775,7 +795,7 @@
                     </div>
                     <div class="sim-stats-row">
                         <div class="sim-stat">
-                            <span class="sim-stat-lbl">Predicted HbA1c</span>
+                            <span class="sim-stat-lbl">Simulated HbA1c</span>
                             <strong id="simTargetStat" class="sim-stat-val">--</strong>
                         </div>
                         <div class="sim-stat">
@@ -790,10 +810,17 @@
                     <div class="sim-controls-grid">
                         <div class="sim-control">
                             <span class="sim-control-lbl">Care Plan</span>
-                            <select id="simCarePlan" class="sim-num-input" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--cream,#f5f0e8);font-size:0.85rem;">
-                                <option value="1">Standard care + Yoga</option>
-                                <option value="2">Standard care</option>
+                            <select id="simCarePlan" class="sim-num-input"
+                                style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:var(--dark-900,#0f0f1a);color:var(--cream,#f5f0e8);font-size:0.85rem;appearance:auto;-webkit-appearance:auto;cursor:pointer;">
+                                <option value="1" style="background:#1a1a2e;color:#f5f0e8;">Standard care + Yoga
+                                </option>
+                                <option value="2" style="background:#1a1a2e;color:#f5f0e8;">Standard care</option>
                             </select>
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-control-lbl">Pre-HbA1c (%)</span>
+                            <input type="range" id="simHba1cSlider" min="4" max="18" step="0.1" class="sim-slider">
+                            <input type="number" id="simHba1cNum" min="4" max="18" step="0.1" class="sim-num-input">
                         </div>
                     </div>
                     <div class="sim-disclaimer">AI-generated, may include mistakes. Don't enter sensitive personal info.
