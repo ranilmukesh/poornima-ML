@@ -72,7 +72,7 @@
                     <span class="card-label">Explainability</span>
                 </div>
                 <div class="floating-card card-3">
-                    <span class="card-value">36</span>
+                    <span class="card-value">37</span>
                     <span class="card-label">Features</span>
                 </div>
             </div>
@@ -84,10 +84,6 @@
                 <h2 class="section-title">Patient Assessment</h2>
                 <p class="section-subtitle">Enter health parameters for diabetes HbA1c prediction</p>
                 <div style="display:flex;gap:10px;margin-top:12px;justify-content:center;flex-wrap:wrap;">
-                    <button type="button" onclick="openJsonModal()"
-                        style="background:linear-gradient(135deg,#2D9596,#1a6b6c);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
-                        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📋
-                        Load JSON</button>
                     <button type="button" onclick="fillDemoData()"
                         style="background:linear-gradient(135deg,#E85D4C,#c14438);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:transform .15s;"
                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🎲
@@ -793,44 +789,11 @@
                     </div>
                     <div class="sim-controls-grid">
                         <div class="sim-control">
-                            <span class="sim-control-lbl">BMI</span>
-                            <input type="range" id="simBmiSlider" min="10" max="60" step="0.1" class="sim-slider">
-                            <input type="number" id="simBmiNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">FBS (mg/dL)</span>
-                            <input type="range" id="simFbsSlider" min="50" max="400" step="1" class="sim-slider">
-                            <input type="number" id="simFbsNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Pre-HbA1c</span>
-                            <input type="range" id="simHba1cSlider" min="4" max="18" step="0.1" class="sim-slider">
-                            <input type="number" id="simHba1cNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">SBP (mmHg)</span>
-                            <input type="range" id="simBpSlider" min="70" max="250" step="1" class="sim-slider">
-                            <input type="number" id="simBpNum" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">PPBS (mg/dL)</span>
-                            <input type="range" id="simPpbsSlider" min="70" max="600" step="1" class="sim-slider">
-                            <input type="number" id="simPpbsNum" min="70" max="600" step="1" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Cholesterol</span>
-                            <input type="range" id="simCholSlider" min="80" max="400" step="1" class="sim-slider">
-                            <input type="number" id="simCholNum" min="80" max="400" step="1" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Triglycerides</span>
-                            <input type="range" id="simTrigSlider" min="50" max="1000" step="1" class="sim-slider">
-                            <input type="number" id="simTrigNum" min="50" max="1000" step="1" class="sim-num-input">
-                        </div>
-                        <div class="sim-control">
-                            <span class="sim-control-lbl">Waist (cm)</span>
-                            <input type="range" id="simWaistSlider" min="50" max="150" step="0.1" class="sim-slider">
-                            <input type="number" id="simWaistNum" min="50" max="150" step="0.1" class="sim-num-input">
+                            <span class="sim-control-lbl">Care Plan</span>
+                            <select id="simCarePlan" class="sim-num-input" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--cream,#f5f0e8);font-size:0.85rem;">
+                                <option value="1">Standard care + Yoga</option>
+                                <option value="2">Standard care</option>
+                            </select>
                         </div>
                     </div>
                     <div class="sim-disclaimer">AI-generated, may include mistakes. Don't enter sensitive personal info.

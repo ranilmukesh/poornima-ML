@@ -344,9 +344,14 @@ function animateCounter(element, start, end, duration) {
 
 function displayFactors(factors) {
     elements.factorsContainer.innerHTML = '';
-    const maxImpact = Math.max(...factors.map(f => Math.abs(f.impact)));
 
-    factors.forEach((factor, index) => {
+    // Filter out any group_x_ cross features that slipped through backend
+    const filtered = factors.filter(f => !f.feature.includes('group_x_'));
+    if (filtered.length === 0) return;
+
+    const maxImpact = Math.max(...filtered.map(f => Math.abs(f.impact)));
+
+    filtered.forEach((factor, index) => {
         const card = createFactorCard(factor, maxImpact);
         elements.factorsContainer.appendChild(card);
         setTimeout(() => { card.classList.add('animate'); }, 50);
@@ -446,10 +451,12 @@ function formatFeatureName(name) {
         return READABLE_NAMES[baseName];
     }
 
-    // Special handlers for interaction terms
-    if (name.includes('group_x_hba1c')) return 'Intervention × Baseline HbA1c';
-    if (name.includes('group_x_fbs')) return 'Intervention × Fasting glucose';
-    if (name.includes('group_x_ppbs')) return 'Intervention × Postprandial glucose';
+    // Special handlers for interaction terms — rename to just "Intervention"
+    if (name.includes('group_x_hba1c')) return 'Intervention';
+    if (name.includes('group_x_fbs')) return 'Intervention';
+    if (name.includes('group_x_ppbs')) return 'Intervention';
+    // Hide any other group_x_ cross features
+    if (name.includes('group_x_')) return 'Intervention';
 
     return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
@@ -962,53 +969,12 @@ function initSimulator() {
     document.getElementById('simBaselineStat').textContent = currentPrediction.predicted_hba1c.toFixed(2);
     updateSimulatorUI(currentPrediction, currentPrediction, currentFormData);
 
-    // Setup each control independently so one failure doesn't break the rest
-    const controls = [
-        ['Bmi', 'PreRBMI', 15, 60],
-        ['Fbs', 'PreBLFBS', 50, 400],
-        ['Hba1c', 'PreBLHBA1C', 3, 16],
-        ['Bp', 'PreRsystolicfirst', 80, 220],
-        ['Ppbs', 'PreBLPPBS', 70, 600],
-        ['Chol', 'PreBLCHOLESTEROL', 80, 400],
-        ['Trig', 'PreBLTRIGLYCERIDES', 50, 1000],
-        ['Waist', 'PreRwaist', 50, 150],
-    ];
-    controls.forEach(([prefix, field, min, max]) => {
-        try {
-            setupSimControl(prefix, field, min, max);
-        } catch (err) {
-            console.error(`[Sim] Failed to setup ${prefix}:`, err);
-        }
-    });
-}
-
-function setupSimControl(idPrefix, fieldName, min, max) {
-    const slider = document.getElementById(`sim${idPrefix}Slider`);
-    const num = document.getElementById(`sim${idPrefix}Num`);
-
-    if (!slider || !num || !currentFormData) {
-        console.warn(`[Sim] Missing element or data for ${idPrefix} (field=${fieldName})`);
-        return;
+    // Setup care plan dropdown
+    const carePlanSelect = document.getElementById('simCarePlan');
+    if (carePlanSelect && currentFormData) {
+        carePlanSelect.value = String(currentFormData.PostRgroupname || 1);
+        carePlanSelect.onchange = () => { simulateRisk(); };
     }
-
-    // Dynamically set attributes on the number input so the browser renders values
-    num.setAttribute('min', min);
-    num.setAttribute('max', max);
-    num.setAttribute('step', slider.step || 'any');
-
-    let val = Number(currentFormData[fieldName]);
-    if (isNaN(val) || val === 0) val = min;
-    if (val < min) val = min;
-    if (val > max) val = max;
-
-    slider.value = val;
-    num.value = val;
-
-    slider.oninput = (e) => { num.value = e.target.value; triggerSimulate(); };
-    num.oninput = (e) => {
-        let v = Number(e.target.value);
-        if (!isNaN(v) && v >= min && v <= max) { slider.value = v; triggerSimulate(); }
-    };
 }
 
 function triggerSimulate() {
@@ -1021,20 +987,11 @@ async function simulateRisk() {
 
     const simulatedData = { ...currentFormData };
 
-    // Helper: read num input, fall back to currentFormData value
-    function readSim(elId, field) {
-        const v = parseFloat(document.getElementById(elId)?.value);
-        return isNaN(v) ? currentFormData[field] : v;
+    // Only change the care plan (intervention)
+    const carePlanSelect = document.getElementById('simCarePlan');
+    if (carePlanSelect) {
+        simulatedData.PostRgroupname = parseInt(carePlanSelect.value) || currentFormData.PostRgroupname;
     }
-
-    simulatedData.PreRBMI = readSim('simBmiNum', 'PreRBMI');
-    simulatedData.PreBLFBS = readSim('simFbsNum', 'PreBLFBS');
-    simulatedData.PreBLHBA1C = readSim('simHba1cNum', 'PreBLHBA1C');
-    simulatedData.PreRsystolicfirst = readSim('simBpNum', 'PreRsystolicfirst');
-    simulatedData.PreBLPPBS = readSim('simPpbsNum', 'PreBLPPBS');
-    simulatedData.PreBLCHOLESTEROL = readSim('simCholNum', 'PreBLCHOLESTEROL');
-    simulatedData.PreBLTRIGLYCERIDES = readSim('simTrigNum', 'PreBLTRIGLYCERIDES');
-    simulatedData.PreRwaist = readSim('simWaistNum', 'PreRwaist');
 
     try {
         const response = await fetchPrediction(simulatedData);
