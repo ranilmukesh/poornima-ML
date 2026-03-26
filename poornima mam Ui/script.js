@@ -299,14 +299,27 @@ function displayClinicalInterpretation(prediction) {
 
     const outcomeLine = `Predicted outcome: ${preCat} → ${postCat} (${traj})`;
 
-    // Response classification (baseline Diabetes only)
+    // HbA1c change summary line
     const delta = preHbA1c - postHbA1c; // positive = improvement
+    let deltaLine = '';
+    if (preHbA1c > 0) {
+        const absDelta = Math.abs(delta).toFixed(1);
+        if (delta > 0) {
+            deltaLine = `HbA1c ${preHbA1c.toFixed(1)}% → ${postHbA1c.toFixed(1)}% ↓ ${absDelta}% HbA1c reduction`;
+        } else if (delta < 0) {
+            deltaLine = `HbA1c ${preHbA1c.toFixed(1)}% → ${postHbA1c.toFixed(1)}% ↑ ${absDelta}% HbA1c increase`;
+        } else {
+            deltaLine = `HbA1c ${preHbA1c.toFixed(1)}% → ${postHbA1c.toFixed(1)}% (No change)`;
+        }
+    }
+
+    // Response classification — no delta values in text (per user spec)
     let responseLine = '';
     if (preCat === 'Diabetes') {
-        if (delta >= 1.0) responseLine = `Predicted response: Major improvement – Risk reduction achieved (ΔHbA1c ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%)`;
-        else if (delta >= 0.5) responseLine = `Predicted response: Clinically meaningful improvement (ΔHbA1c +${delta.toFixed(2)}%)`;
-        else if (delta >= 0) responseLine = `Predicted response: Stabilization / modest improvement (ΔHbA1c +${delta.toFixed(2)}%)`;
-        else responseLine = `Predicted response: Non-response (ΔHbA1c ${delta.toFixed(2)}%)`;
+        if (delta >= 1.0) responseLine = 'Predicted response: Major improvement – Risk reduction achieved (≥1.0% reduction)';
+        else if (delta >= 0.5) responseLine = 'Predicted response: Clinically meaningful improvement (≥0.5% reduction)';
+        else if (delta >= 0) responseLine = 'Predicted response: Stabilization / modest improvement';
+        else responseLine = 'Predicted response: Non-response (increase in HbA1c)';
     }
 
     // Target achievement
@@ -321,7 +334,9 @@ function displayClinicalInterpretation(prediction) {
     const outEl = document.getElementById('outcomeLine');
     const resEl = document.getElementById('responseLine');
     const tgtEl = document.getElementById('targetLine');
+    const deltaEl = document.getElementById('hba1cDeltaLine');
 
+    if (deltaEl) { deltaEl.textContent = deltaLine; deltaEl.style.display = deltaLine ? '' : 'none'; }
     if (outEl) outEl.textContent = outcomeLine;
     if (resEl) resEl.textContent = responseLine;
     if (tgtEl) tgtEl.textContent = targetLine;

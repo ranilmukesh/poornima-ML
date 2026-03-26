@@ -729,6 +729,9 @@
                 <!-- Clinical Interpretation Lines -->
                 <div id="clinicalInterpretation"
                     style="margin-top:16px;text-align:left;color:var(--cream);font-size:0.85rem;line-height:1.6;">
+                    <p id="hba1cDeltaLine"
+                        style="margin-bottom:8px;font-weight:700;font-size:0.95rem;color:#7dd3fc;letter-spacing:0.01em;">
+                    </p>
                     <p id="outcomeLine" style="margin-bottom:4px;"></p>
                     <p id="responseLine" style="margin-bottom:4px;"></p>
                     <p id="targetLine" style="margin-bottom:0;"></p>
@@ -795,16 +798,16 @@
                     </div>
                     <div class="sim-stats-row">
                         <div class="sim-stat">
+                            <span class="sim-stat-lbl">Predicted HbA1c</span>
+                            <strong id="simBaselineStat" class="sim-stat-val">--</strong>
+                        </div>
+                        <div class="sim-stat">
                             <span class="sim-stat-lbl">Simulated HbA1c</span>
                             <strong id="simTargetStat" class="sim-stat-val">--</strong>
                         </div>
                         <div class="sim-stat">
                             <span class="sim-stat-lbl">Delta</span>
                             <strong id="simDeltaStat" class="sim-stat-val">--</strong>
-                        </div>
-                        <div class="sim-stat">
-                            <span class="sim-stat-lbl">Intitially predicted Baseline</span>
-                            <strong id="simBaselineStat" class="sim-stat-val">--</strong>
                         </div>
                     </div>
                     <div class="sim-controls-grid">
