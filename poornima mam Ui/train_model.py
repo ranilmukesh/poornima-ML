@@ -1,5 +1,5 @@
 """
-DiabeSense+ Model Training Pipeline
+DiabSense+ Model Training Pipeline
 Predicts post-intervention HbA1c (PostBLHBA1C) using:
   1. Imputation Tournament (Mean, Median, KNN, MICE, Zero)
   2. Stacking Ensemble (Ridge, Lasso, ElasticNet, BayesianRidge,
@@ -52,7 +52,7 @@ DATA_FILES = [
 ]
 
 TARGET_COL = "PostBLHBA1C"
-OUTPUT_PATH = os.path.join(BASE_DIR, "diabesense_artifacts.pkl")
+OUTPUT_PATH = os.path.join(BASE_DIR, "diabsense_artifacts.pkl")
 
 # Column rename mapping (actual CSV names -> desired names)
 COLUMN_RENAMES = {
@@ -435,7 +435,7 @@ def save_artifacts(preprocessor, stack_model, xgb_shap_model, feature_names: lis
 
 def main():
     print("=" * 60)
-    print("    DiabeSense+ Model Training Pipeline")
+    print("    DiabSense+ Model Training Pipeline")
     print("    Target: PostBLHBA1C (HbA1c Regression)")
     print(f"    Threads: {N_JOBS} (CPU-based)")
     print("=" * 60)

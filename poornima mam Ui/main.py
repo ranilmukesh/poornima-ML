@@ -1,5 +1,5 @@
 """
-DiabeSense+ API
+DiabSense+ API
 AI-powered diabetes HbA1c prediction with explainable insights
 """
 
@@ -26,7 +26,7 @@ except Exception as _llm_err:
     print("    Install with: pip install agno sqlalchemy python-dotenv")
 
 app = FastAPI(
-    title="DiabeSense+ API",
+    title="DiabSense+ API",
     description="AI-powered diabetes HbA1c prediction with explainable insights",
     version="1.0.0",
     docs_url="/docs",
@@ -41,7 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ARTIFACTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "diabesense_artifacts.pkl")
+ARTIFACTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "diabsense_artifacts.pkl")
 
 model = None
 shap_model = None
@@ -296,7 +296,7 @@ def _predict_hba1c(patient_data: dict) -> float:
 @app.get("/", tags=["General"])
 async def root():
     return {
-        "message": "Welcome to DiabeSense+ API",
+        "message": "Welcome to DiabSense+ API",
         "description": "AI-powered diabetes HbA1c prediction with explainable insights",
         "docs": "/docs",
         "endpoints": {
@@ -360,9 +360,17 @@ async def predict_hba1c(data: PatientData):
 
         target_line = None
         if pre_cat == "Diabetes" and pre_hba1c > 7.0:
+            age_display = int(round(age))
             target = 7.0 if age < 65 else 7.5
-            achieved = "Achieved" if predicted_hba1c <= target else "Not achieved"
-            target_line = f"Glycemic control target: ≤{target} (age {int(age)}) | {achieved}"
+            baseline_val = round(pre_hba1c, 1)
+            post_val = round(predicted_hba1c, 1)
+            baseline_at_target = baseline_val <= target
+            post_at_target = post_val <= target
+            if baseline_at_target:
+                achieved = "At target" if post_at_target else "Above target"
+            else:
+                achieved = "Achieved target" if post_at_target else "Not achieved"
+            target_line = f"Glycemic control target: ≤{target:.1f}% (age {age_display}) | {achieved}"
 
         return PredictionResponse(
             predicted_hba1c=round(predicted_hba1c, 2),
