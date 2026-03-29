@@ -1,5 +1,5 @@
 /* ============================================
-   DiabeSense+ Styles
+   DiabSense+ Styles
    Premium Medical AI Interface
    Color Palette: Cream (#FFFDF2), Black (#000000)
    ============================================ */
@@ -256,7 +256,6 @@ body {
 .logo-subtitle {
     font-size: 0.625rem;
     color: var(--gray-500);
-    text-transform: uppercase;
     letter-spacing: 0.1em;
 }
 
@@ -827,7 +826,6 @@ input[type="number"]::placeholder {
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--gray-400);
-    text-transform: uppercase;
     letter-spacing: 0.1em;
 }
 

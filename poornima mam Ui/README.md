@@ -1,6 +1,6 @@
-# DiabeSense+ 🩺
+# DiabSense+ 🩺
 
-**DiabeSense+** is an advanced AI-powered web platform designed to predict a patient's post-treatment HbA1c levels based on a comprehensive set of clinical, demographic, and lifestyle factors. By leveraging robust ensemble machine learning and Explainable AI (SHAP), the application provides personalized, actionable insights to aid in diabetes management and lifestyle intervention planning.
+**DiabSense+** is an advanced AI-powered web platform designed to predict a patient's post-treatment HbA1c levels based on a comprehensive set of clinical, demographic, and lifestyle factors. By leveraging robust ensemble machine learning and Explainable AI (SHAP), the application provides personalized, actionable insights to aid in diabetes management and lifestyle intervention planning.
 
 ---
 
@@ -65,7 +65,7 @@ pip install agno sqlalchemy python-dotenv
 ```
 
 ### 3. Train the Model (Required First Step)
-Before starting the API, you must train the model using your CSV datasets. This creates the `diabesense_artifacts.pkl` file required by the backend.
+Before starting the API, you must train the model using your CSV datasets. This creates the `diabsense_artifacts.pkl` file required by the backend.
 ```bash
 python train_model.py
 ```

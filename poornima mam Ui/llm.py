@@ -1,5 +1,5 @@
 """
-DiabeSense+ LLM Chat Module
+DiabSense+ LLM Chat Module
 AI-powered health chat using Agno SDK + Nvidia LLM
 Context Injection pattern: patient data is injected into the system prompt.
 """
@@ -27,7 +27,7 @@ from agno.models.nvidia import Nvidia
 from agno.db.sqlite import SqliteDb
 
 os.makedirs("tmp", exist_ok=True)
-_chat_db = SqliteDb(db_file="tmp/diabesense_chat.db")
+_chat_db = SqliteDb(db_file="tmp/diabsense_chat.db")
 _sessions: dict = {}
 
 
@@ -150,11 +150,11 @@ def start_chat_session(
             max_tokens=16384,
             temperature=0.1,
             top_p=0.95,
-            id="nvidia/nemotron-3-super-120b-a12b"
+            id="minimaxai/minimax-m2.5"
         ),
         description=(
-            "You are DiabeSense AI, a warm and empathetic diabetes health assistant "
-            "built into the DiabeSense+ HbA1c prediction platform. "
+            "You are DiabSense AI, a warm and empathetic diabetes health assistant "
+            "built into the DiabSense+ HbA1c prediction platform. "
             "A patient has just completed their diabetes assessment. "
             "Their full data and results are below.\n\n"
             + system_context

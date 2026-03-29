@@ -1,5 +1,5 @@
 /**
- * DiabeSense+ Frontend Application
+ * DiabSense+ Frontend Application
  * AI-Powered Diabetes HbA1c Prediction Interface
  * Connects to FastAPI backend for predictions and SHAP explanations
  */
@@ -325,9 +325,19 @@ function displayClinicalInterpretation(prediction) {
     // Target achievement
     let targetLine = '';
     if (preCat === 'Diabetes' && preHbA1c > 7.0) {
+        const ageDisplay = Math.round(age);
         const target = age < 65 ? 7.0 : 7.5;
-        const achieved = postHbA1c <= target ? 'Achieved ✅' : 'Not achieved ❌';
-        targetLine = `Glycemic control target: ≤${target}% (age ${age}) | ${achieved}`;
+        const baselineVal = Math.round(preHbA1c * 10) / 10;
+        const postVal = Math.round(postHbA1c * 10) / 10;
+        const baselineAtTarget = baselineVal <= target;
+        const postAtTarget = postVal <= target;
+        let achieved;
+        if (baselineAtTarget) {
+            achieved = postAtTarget ? 'At target ✅' : 'Above target ❌';
+        } else {
+            achieved = postAtTarget ? 'Achieved target ✅' : 'Not achieved ❌';
+        }
+        targetLine = `Glycemic control target: ≤${target.toFixed(1)}% (age ${ageDisplay}) | ${achieved}`;
     }
 
     // Update DOM
@@ -562,7 +572,7 @@ function showForm() {
 // =============================================
 // LOCAL STORAGE PERSISTENCE
 // =============================================
-const LS_KEY = 'diabesense_form_v1';
+const LS_KEY = 'diabsense_form_v1';
 
 function saveFormToStorage(formData) {
     // Also capture radio + dropdown state from DOM directly
@@ -1200,7 +1210,7 @@ async function initializeChat() {
     } catch (error) {
         console.error('Chat init error:', error);
         removeTypingIndicator();
-        addChatMessage('system', '⚠️ Could not connect to DiabeSense AI. Make sure NVIDIA_API_KEY is set and agno is installed.');
+        addChatMessage('system', '⚠️ Could not connect to DiabSense AI. Make sure NVIDIA_API_KEY is set and agno is installed.');
         setChatStatus('Offline');
     }
 }
