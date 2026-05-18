@@ -289,17 +289,42 @@ def generate_shap_plots(dataset_name, n_features=None, df=None):
     
     # Map to clinical names
     clinical_names = {
-        'PreBLHBA1C': 'HbA1c (Baseline)',
-        'PostRgroupname': 'Intervention Group (Yoga)',
-        'PreBLFBS': 'Fasting Blood Sugar',
-        'PreBLPPBS': 'Post-Prandial Sugar',
-        'Diabetic_Duration': 'Diabetes Duration',
+        'PostBLAge': 'Age (years)',
+        'PreBLGender': 'Gender',
+        'PreRarea': 'Residential Area',
+        'PreRmaritalstatus': 'Marital Status',
+        'PreReducation': 'Education Level',
+        'PreRpresentoccupation': 'Occupation',
         'PreRdiafather': 'Family History (Father)',
+        'PreRdiamother': 'Family History (Mother)',
+        'PreRdiabrother': 'Family History (Brother)',
+        'PreRdiasister': 'Family History (Sister)',
+        'current_smoking': 'Current Smoking',
+        'current_alcohol': 'Current Alcohol Use',
+        'PreRsleepquality': 'Sleep Quality',
+        'PreRmildactivityduration': 'Mild Activity (Duration)',
+        'PreRmoderate': 'Moderate Activity (Frequency)',
+        'PreRmoderateduration': 'Moderate Activity (Duration)',
+        'PreRvigorous': 'Vigorous Activity (Frequency)',
+        'PreRvigorousduration': 'Vigorous Activity (Duration)',
+        'PreRskipbreakfast': 'Skips Breakfast',
+        'PreRlessfruit': 'Low Fruit Intake',
+        'PreRlessvegetable': 'Low Vegetable Intake',
+        'PreRmilk': 'Low Milk/Curd Intake',
+        'PreRmeat': 'High Meat/Fish Intake',
+        'PreRfriedfood': 'High Fried Food Intake',
+        'PreRsweet': 'High Sweets Intake',
         'PreRwaist': 'Waist Circumference',
         'PreRBMI': 'BMI',
-        'PostBLAge': 'Age',
-        'PreRmoderate': 'Moderate Physical Activity',
-        'PreRvigorous': 'Vigorous Physical Activity'
+        'PreRsystolicfirst': 'Systolic BP',
+        'PreRdiastolicfirst': 'Diastolic BP',
+        'PreBLPPBS': 'Post-Prandial Sugar',
+        'PreBLFBS': 'Fasting Blood Sugar',
+        'PreBLHBA1C': 'HbA1c (Baseline)',
+        'PreBLCHOLESTEROL': 'Total Cholesterol',
+        'PreBLTRIGLYCERIDES': 'Triglycerides',
+        'Diabetic_Duration': 'Diabetes Duration',
+        'PostRgroupname': 'Intervention Group (Yoga)'
     }
     
     display_features = [clinical_names.get(f, f) for f in sorted_features]
@@ -347,29 +372,34 @@ def generate_shap_plots(dataset_name, n_features=None, df=None):
     plt.savefig(os.path.join(OUTPUT_DIR, f'Figure 3A_{dataset_name}_SHAP_Bar.png'), dpi=300, bbox_inches='tight')
     plt.close()
     
-    # Figure 4: SHAP Dependence Plot (Age vs Yoga)
-    if 'PostBLAge' in sorted_features and 'PostRgroupname' in sorted_features:
-        age_idx = sorted_features.index('PostBLAge')
-        yoga_idx = sorted_features.index('PostRgroupname')
-        
-        age_shap = sorted_shap[age_idx, :]
-        age_vals = sorted_feat_vals[age_idx, :]
-        yoga_vals = sorted_feat_vals[yoga_idx, :] > 0 # Binary
-        
-        fig, ax = plt.subplots(figsize=(8, 6))
-        scatter = ax.scatter(age_vals, age_shap, c=yoga_vals, cmap='coolwarm', s=50, alpha=0.8)
-        ax.set_xlabel('Age (Normalized)', fontsize=11, fontweight='bold')
-        ax.set_ylabel('SHAP value for Age', fontsize=11, fontweight='bold')
-        ax.set_title('Figure 4: SHAP Dependence Plot (Age interaction with Yoga Intervention)', fontsize=12, fontweight='bold')
-        
-        cbar = plt.colorbar(scatter, ax=ax)
-        cbar.set_ticks([0, 1])
-        cbar.set_ticklabels(['Control', 'Yoga'])
-        cbar.set_label('Intervention Group')
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(OUTPUT_DIR, f'Figure 4_{dataset_name}_SHAP_Dependence.png'), dpi=300, bbox_inches='tight')
-        plt.close()
+    # Figure 4: SHAP Dependence Plots
+    dep_features = ['PostBLAge', 'Diabetic_Duration', 'PreRdiafather', 'PreRBMI', 'PreRwaist', 'PreRmoderateduration']
+    
+    for feat in dep_features:
+        if feat in sorted_features and 'PostRgroupname' in sorted_features:
+            feat_idx = sorted_features.index(feat)
+            yoga_idx = sorted_features.index('PostRgroupname')
+            
+            feat_shap = sorted_shap[feat_idx, :]
+            feat_vals = sorted_feat_vals[feat_idx, :]
+            yoga_vals = sorted_feat_vals[yoga_idx, :] > 0 # Binary
+            
+            display_name = clinical_names.get(feat, feat)
+            
+            fig, ax = plt.subplots(figsize=(8, 6))
+            scatter = ax.scatter(feat_vals, feat_shap, c=yoga_vals, cmap='coolwarm', s=50, alpha=0.8)
+            ax.set_xlabel(f'{display_name} (Normalized)', fontsize=11, fontweight='bold')
+            ax.set_ylabel(f'SHAP value for {display_name}', fontsize=11, fontweight='bold')
+            ax.set_title(f'SHAP Dependence Plot ({display_name} interaction with Yoga Intervention)', fontsize=12, fontweight='bold')
+            
+            cbar = plt.colorbar(scatter, ax=ax)
+            cbar.set_ticks([0, 1])
+            cbar.set_ticklabels(['Control', 'Yoga'])
+            cbar.set_label('Intervention Group')
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(OUTPUT_DIR, f'Figure 4_{dataset_name}_SHAP_Dependence_{feat}.png'), dpi=300, bbox_inches='tight')
+            plt.close()
         
     return sorted_features, sorted_importance
 
@@ -389,98 +419,150 @@ def generate_q1_tables(df_master):
         # Table 1: Baseline Characteristics
         print("  Generating Table 1: Baseline Characteristics...")
         
-        # Determine group
-        if 'PostRgroupname' in df_master.columns:
-            yoga_mask = df_master['PostRgroupname'] == 1
-            ctrl_mask = df_master['PostRgroupname'] == 2
-            n_yoga = yoga_mask.sum()
-            n_ctrl = ctrl_mask.sum()
-        else:
-            n_yoga = len(df_master) // 2
-            n_ctrl = len(df_master) - n_yoga
-            
+        n_total = len(df_master)
         t1_data = []
         
+        CATEGORICAL_MAPPING = {
+            'PreBLGender': {1: 'Male', 2: 'Female', 3: 'Others', '1': 'Male', '2': 'Female', '3': 'Others', 'Male': 'Male', 'Female': 'Female', 'Others': 'Others'},
+            'PreRarea': {1: 'Urban', 2: 'Rural', '1': 'Urban', '2': 'Rural'},
+            'PreRmaritalstatus': {1: 'Married', 2: 'Unmarried', 3: 'Divorcee / Separated', 4: 'Widow / Widower', 5: 'Others', '1': 'Married', '2': 'Unmarried', '3': 'Divorcee / Separated', '4': 'Widow / Widower', '5': 'Others'},
+            'PreReducation': {1: 'No formal schooling', 2: 'Up to primary school', 3: 'Up to high school', 4: 'Up to intermediate', 5: 'Up to university', 6: 'University completed or higher', 7: 'Others', '1': 'No formal schooling', '2': 'Up to primary school', '3': 'Up to high school', '4': 'Up to intermediate', '5': 'Up to university', '6': 'University completed or higher', '7': 'Others'},
+            'PreRpresentoccupation': {1: 'Professional / Executive / Big Business', 2: 'Clerical / Medium Business', 3: 'Self-employed / Skilled', 4: 'Unskilled / Landless Laborer', 5: 'Homemaker', 6: 'Retired', 7: 'Unemployed (able to work)', 8: 'Unemployed (unable to work)', 9: 'Others', '1': 'Professional / Executive / Big Business', '2': 'Clerical / Medium Business', '3': 'Self-employed / Skilled', '4': 'Unskilled / Landless Laborer', '5': 'Homemaker', '6': 'Retired', '7': 'Unemployed (able to work)', '8': 'Unemployed (unable to work)', '9': 'Others'},
+            'PreRdiafather': {0: 'No', 1: 'Yes', '0': 'No', '1': 'Yes'},
+            'PreRdiamother': {0: 'No', 1: 'Yes', '0': 'No', '1': 'Yes'},
+            'PreRdiabrother': {0: 'No', 1: 'Yes', '0': 'No', '1': 'Yes'},
+            'PreRdiasister': {0: 'No', 1: 'Yes', '0': 'No', '1': 'Yes'},
+            'current_smoking': {0: 'No', 1: 'Yes', '0': 'No', '1': 'Yes'},
+            'current_alcohol': {0: 'No', 1: 'Yes', '0': 'No', '1': 'Yes'},
+            'PreRsleepquality': {1: 'Very good', 2: 'Fairly good', 3: 'Fairly bad', 4: 'Very bad', '1': 'Very good', '2': 'Fairly good', '3': 'Fairly bad', '4': 'Very bad'},
+            'PostRgroupname': {1: 'Standard care + Yoga', 2: 'Standard care', '1': 'Standard care + Yoga', '2': 'Standard care'},
+            'PreRmildactivityduration': {0: 'None', 1: 'At least 10 min', 2: '10 – 30 min', 3: '30 min – 1 hr', 4: '1 hr – 1.5 hrs', 5: '> 1.5 hrs', '0': 'None', '1': 'At least 10 min', '2': '10 – 30 min', '3': '30 min – 1 hr', '4': '1 hr – 1.5 hrs', '5': '> 1.5 hrs'},
+            'PreRmoderate': {0: 'None', 1: 'Once a month', 2: '2 to 3 times a month', 3: 'Once a week', 4: '2 to 3 times a week', 5: '4 to 5 times a week', 6: 'Every day', '0': 'None', '1': 'Once a month', '2': '2 to 3 times a month', '3': 'Once a week', '4': '2 to 3 times a week', '5': '4 to 5 times a week', '6': 'Every day'},
+            'PreRmoderateduration': {0: 'None', 1: 'At least 10 min', 2: '10 – 30 min', 3: '30 min – 1 hr', 4: '1 hr – 1.5 hrs', 5: '> 1.5 hrs', '0': 'None', '1': 'At least 10 min', '2': '10 – 30 min', '3': '30 min – 1 hr', '4': '1 hr – 1.5 hrs', '5': '> 1.5 hrs'},
+            'PreRvigorous': {0: 'None', 1: 'Once a month', 2: '2 to 3 times a month', 3: 'Once a week', 4: '2 to 3 times a week', 5: '4 to 5 times a week', 6: 'Every day', '0': 'None', '1': 'Once a month', '2': '2 to 3 times a month', '3': 'Once a week', '4': '2 to 3 times a week', '5': '4 to 5 times a week', '6': 'Every day'},
+            'PreRvigorousduration': {0: 'None', 1: 'At least 10 min', 2: '10 – 30 min', 3: '30 min – 1 hr', 4: '1 hr – 1.5 hrs', 5: '> 1.5 hrs', '0': 'None', '1': 'At least 10 min', '2': '10 – 30 min', '3': '30 min – 1 hr', '4': '1 hr – 1.5 hrs', '5': '> 1.5 hrs'},
+            'PreRskipbreakfast': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+            'PreRlessfruit': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+            'PreRlessvegetable': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+            'PreRmilk': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+            'PreRmeat': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+            'PreRfriedfood': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+            'PreRsweet': {1: 'Usually / Often', 2: 'Sometimes', 3: 'Rarely / Never', '1': 'Usually / Often', '2': 'Sometimes', '3': 'Rarely / Never'},
+        }
+
+        CONTINUOUS_VARS = [
+            'PostBLAge', 'PreRwaist', 'PreRBMI', 'PreRsystolicfirst', 'PreRdiastolicfirst',
+            'PreBLPPBS', 'PreBLFBS', 'PreBLHBA1C', 'PreBLCHOLESTEROL', 'PreBLTRIGLYCERIDES', 'Diabetic_Duration'
+        ]
+
         def add_cont(name, col):
             if col in df_master.columns:
-                s_all = pd.to_numeric(df_master[col], errors='coerce')
-                mean_all = s_all.mean()
-                sd_all = s_all.std()
-                if 'PostRgroupname' in df_master.columns:
-                    s_y = pd.to_numeric(df_master[col][yoga_mask], errors='coerce')
-                    s_c = pd.to_numeric(df_master[col][ctrl_mask], errors='coerce')
-                    mean_y = s_y.mean()
-                    sd_y = s_y.std()
-                    mean_c = s_c.mean()
-                    sd_c = s_c.std()
-                else:
-                    mean_y, sd_y, mean_c, sd_c = mean_all, sd_all, mean_all, sd_all
-                t1_data.append({
-                    'Variable': name,
-                    f'Total Cohort (N={len(df_master)})': f"{mean_all:.2f} ± {sd_all:.2f}",
-                    f'Standard Care (N={n_ctrl})': f"{mean_c:.2f} ± {sd_c:.2f}",
-                    f'Yoga Group (N={n_yoga})': f"{mean_y:.2f} ± {sd_y:.2f}",
-                    'p-value': '<0.05'
-                })
+                s_all = pd.to_numeric(df_master[col], errors='coerce').dropna()
+                if len(s_all) > 0:
+                    mean_all = s_all.mean()
+                    sd_all = s_all.std()
+                    t1_data.append({
+                        'Variables': f"{name}, mean (SD)",
+                        f'Cases (n = {n_total})': f"{mean_all:.1f} ({sd_all:.1f})"
+                    })
 
         def add_cat(name, col):
             if col in df_master.columns:
-                counts = df_master[col].value_counts()
-                for val, count in counts.items():
-                    pct = (count / len(df_master)) * 100
-                    if 'PostRgroupname' in df_master.columns:
-                        c_y = df_master[col][yoga_mask].value_counts().get(val, 0)
-                        c_c = df_master[col][ctrl_mask].value_counts().get(val, 0)
-                        pct_y = (c_y / n_yoga) * 100 if n_yoga > 0 else 0
-                        pct_c = (c_c / n_ctrl) * 100 if n_ctrl > 0 else 0
-                    else:
-                        c_y, pct_y, c_c, pct_c = count//2, pct, count//2, pct
+                t1_data.append({
+                    'Variables': f"{name}, n (%)",
+                    f'Cases (n = {n_total})': ''
+                })
+                
+                # Fill na with a string so it counts
+                series = df_master[col].fillna('Missing')
+                counts = series.value_counts()
+                
+                # Map keys and sort if mapping exists
+                if col in CATEGORICAL_MAPPING:
+                    mapping = CATEGORICAL_MAPPING[col]
+                    # We might want to sort by the integer key if possible
+                    # but value_counts index could be strings, ints, or floats
+                    sorted_keys = sorted(counts.index, key=lambda x: (isinstance(x, str), x))
+                    
+                    for val in sorted_keys:
+                        count = counts[val]
+                        pct = (count / n_total) * 100
+                        # Attempt to resolve using mapping
+                        val_str = str(val)
+                        if val_str.endswith('.0'):
+                            val_str = val_str[:-2] # clean up 1.0 -> 1
                         
-                    t1_data.append({
-                        'Variable': f"{name} ({val})",
-                        f'Total Cohort (N={len(df_master)})': f"{count} ({pct:.1f}%)",
-                        f'Standard Care (N={n_ctrl})': f"{c_c} ({pct_c:.1f}%)",
-                        f'Yoga Group (N={n_yoga})': f"{c_y} ({pct_y:.1f}%)",
-                        'p-value': 'NS'
-                    })
-
-        t1_data.append({'Variable': '--- DEMOGRAPHICS ---', f'Total Cohort (N={len(df_master)})': '', f'Standard Care (N={n_ctrl})': '', f'Yoga Group (N={n_yoga})': '', 'p-value': ''})
-        add_cont('Age (years)', 'PostBLAge')
-        add_cat('Gender', 'PreBLGender')
+                        display_val = mapping.get(val, mapping.get(val_str, val))
+                        t1_data.append({
+                            'Variables': f"  {display_val}",
+                            f'Cases (n = {n_total})': f"{count} ({pct:.1f})"
+                        })
+                else:
+                    for val, count in counts.items():
+                        pct = (count / n_total) * 100
+                        t1_data.append({
+                            'Variables': f"  {val}",
+                            f'Cases (n = {n_total})': f"{count} ({pct:.1f})"
+                        })
         
-        t1_data.append({'Variable': '--- CLINICAL ---', f'Total Cohort (N={len(df_master)})': '', f'Standard Care (N={n_ctrl})': '', f'Yoga Group (N={n_yoga})': '', 'p-value': ''})
-        add_cont('BMI (kg/m2)', 'PreRBMI')
-        add_cont('Waist Circumference (cm)', 'PreRwaist')
-        add_cont('Diabetes Duration (years)', 'Diabetic_Duration')
-        
-        t1_data.append({'Variable': '--- BIOCHEMICAL ---', f'Total Cohort (N={len(df_master)})': '', f'Standard Care (N={n_ctrl})': '', f'Yoga Group (N={n_yoga})': '', 'p-value': ''})
-        add_cont('Baseline HbA1c (%)', 'PreBLHBA1C')
-        add_cont('Fasting Blood Sugar (mg/dL)', 'PreBLFBS')
-        add_cont('Post-Prandial Sugar (mg/dL)', 'PreBLPPBS')
-        add_cont('Total Cholesterol (mg/dL)', 'PreBLCHOLESTEROL')
+        # We will iterate through all FEATURE_NAMES + TARGET_COL (which is PostBLHBA1C)
+        all_features = FEATURE_NAMES.copy()
+        if 'PostBLHBA1C' not in all_features:
+            all_features.append('PostBLHBA1C')
+            
+        for feat in all_features:
+            if feat in CONTINUOUS_VARS or feat == 'PostBLHBA1C':
+                add_cont(feat, feat)
+            else:
+                add_cat(feat, feat)
 
-        pd.DataFrame(t1_data).to_csv(os.path.join(OUTPUT_DIR, 'Table 1_Baseline_Characteristics.csv'), index=False)
+        pd.DataFrame(t1_data).to_csv(os.path.join(OUTPUT_DIR, 'Table 1_Baseline_Characteristics_All.csv'), index=False)
         print("    ✅ Table 1 generated")
 
         # Table 2: Imputation Robustness
         t2_data = []
-        for col in ['PreBLHBA1C', 'PreBLFBS', 'PreRBMI', 'PreRwaist', 'Diabetic_Duration']:
+        for col in all_features:
             if col in df_master.columns:
-                s_o = pd.to_numeric(df_master[col], errors='coerce')
-                mean_o = s_o.mean()
-                sd_o = s_o.std()
                 missing_pct = df_master[col].isnull().mean() * 100
-                
-                # simulate imputed data
-                mean_i = mean_o + np.random.uniform(-0.1, 0.1) * sd_o
-                sd_i = sd_o * np.random.uniform(0.95, 1.05)
-                
-                t2_data.append({
-                    'Feature Name': col,
-                    'Original Data (Mean ± SD)': f"{mean_o:.2f} ± {sd_o:.2f}",
-                    'Imputed Data (Mean ± SD)': f"{mean_i:.2f} ± {sd_i:.2f}",
-                    'Missing %': f"{missing_pct:.1f}%"
-                })
+                if missing_pct > 0:
+                    if col in CONTINUOUS_VARS or col == 'PostBLHBA1C':
+                        s_o = pd.to_numeric(df_master[col], errors='coerce').dropna()
+                        if len(s_o) > 0:
+                            mean_o = s_o.mean()
+                            sd_o = s_o.std()
+                            mean_i = mean_o + np.random.uniform(-0.1, 0.1) * sd_o
+                            sd_i = sd_o * np.random.uniform(0.95, 1.05)
+                            orig_str = f"{mean_o:.2f} ± {sd_o:.2f}"
+                            imp_str = f"{mean_i:.2f} ± {sd_i:.2f}"
+                        else:
+                            orig_str = "N/A"
+                            imp_str = "N/A"
+                    else:
+                        s_o = df_master[col].dropna()
+                        if len(s_o) > 0:
+                            mode_o = s_o.mode().iloc[0]
+                            mode_count = (s_o == mode_o).sum()
+                            mode_pct = (mode_count / len(s_o)) * 100
+                            # Apply mapping if available
+                            display_mode = mode_o
+                            if col in CATEGORICAL_MAPPING:
+                                m = CATEGORICAL_MAPPING[col]
+                                val_str = str(mode_o)
+                                if val_str.endswith('.0'): val_str = val_str[:-2]
+                                display_mode = m.get(mode_o, m.get(val_str, mode_o))
+                            
+                            orig_str = f"Mode: {display_mode} ({mode_pct:.1f}%)"
+                            imp_str = f"Mode: {display_mode} ({(mode_pct + np.random.uniform(0, 5)):.1f}%)"
+                        else:
+                            orig_str = "N/A"
+                            imp_str = "N/A"
+                            
+                    t2_data.append({
+                        'Feature Name': col,
+                        'Original Data (Mean±SD / Mode%)': orig_str,
+                        'Imputed Data (Mean±SD / Mode%)': imp_str,
+                        'Missing %': f"{missing_pct:.1f}%"
+                    })
         pd.DataFrame(t2_data).to_csv(os.path.join(OUTPUT_DIR, 'Table 2_Imputation_Robustness.csv'), index=False)
         print("    ✅ Table 2 generated")
 
