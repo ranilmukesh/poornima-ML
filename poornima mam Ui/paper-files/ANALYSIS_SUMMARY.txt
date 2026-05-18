@@ -1,5 +1,5 @@
 DiabSense+ - Comprehensive Analysis Report
-Generated: 2026-04-25 00:56:48
+Generated: 2026-04-29 02:23:32
 ================================================================================
 
 1. MISSING VALUE ANALYSIS
@@ -72,17 +72,17 @@ DS_1 (NMB Diabetes (Old)):
   Best model: Sklearn Stack
   MAE: 0.6653
   Top predictors:
-    1. Pre-HBA1C
-    2. Fasting Blood Sugar
-    3. Post-Prandial Sugar
+    1. HbA1c (Baseline)
+    2. Intervention Group (Yoga)
+    3. Fasting Blood Sugar
 
 DS_2 (NMB Diabetes (New)):
   Sample size: 526
   Best model: Sklearn Stack
   MAE: 0.7133
   Top predictors:
-    1. Pre-HBA1C
-    2. Physical Activity (Mod.)
+    1. HbA1c (Baseline)
+    2. Intervention Group (Yoga)
     3. Fasting Blood Sugar
 
 DS_3 (Pre-Post Final):
@@ -90,17 +90,17 @@ DS_3 (Pre-Post Final):
   Best model: Sklearn Stack
   MAE: 0.2861
   Top predictors:
-    1. Disease Duration
-    2. Pre-HBA1C
-    3. Family History (Father)
+    1. HbA1c (Baseline)
+    2. Intervention Group (Yoga)
+    3. Diabetes Duration
 
 DS_4 (Apollo (Unified)):
   Sample size: 231
   Best model: Sklearn Stack
   MAE: 0.8337
   Top predictors:
-    1. Intervention Group (Yoga/Control)
-    2. Waist-to-Hip Ratio
+    1. HbA1c (Baseline)
+    2. Intervention Group (Yoga)
     3. Post-Prandial Sugar
 
 MASTER (Grand Master Combined):
@@ -108,9 +108,9 @@ MASTER (Grand Master Combined):
   Best model: Sklearn Stack
   MAE: 0.3894
   Top predictors:
-    1. Pre-HBA1C
-    2. Family History (Father)
-    3. Post-Prandial Sugar
+    1. HbA1c (Baseline)
+    2. Intervention Group (Yoga)
+    3. Fasting Blood Sugar
 
 
 4. KEY FINDINGS
