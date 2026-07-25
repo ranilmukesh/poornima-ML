@@ -64,6 +64,7 @@ def load_dataset(name, path):
     try:
         df = pd.read_csv(path, low_memory=False)
         df.columns = df.columns.str.strip()
+        df = df.rename(columns={'PreRgender': 'PreBLGender', 'postblage': 'PostBLAge'})
         print(f"    Shape: {df.shape}")
         print(f"    Columns: {len(df.columns)}")
         return df
@@ -416,10 +417,37 @@ def generate_q1_tables(df_master):
     # Pre-processing real dataset for Table 1
     # Check if df_master has actual data
     if df_master is not None and len(df_master) > 0:
+        # Impute data for Table 1 so there are no "Missing" variables
+        df_imputed = df_master.copy()
+        try:
+            import sys
+            if BASE_DIR not in sys.path:
+                sys.path.append(BASE_DIR)
+            from train_model import run_imputation_tournament, NUMERIC_FEATURES, CATEGORICAL_FEATURES
+            from sklearn.impute import SimpleImputer
+            
+            print("  Running imputation on dataset for Table 1 (Numeric)...")
+            numeric_in_data = [c for c in NUMERIC_FEATURES if c in df_imputed.columns]
+            for c in numeric_in_data:
+                df_imputed[c] = pd.to_numeric(df_imputed[c], errors='coerce')
+            df_imputed = run_imputation_tournament(df_imputed, numeric_in_data)
+            
+            for c in ['PreRmildactivityduration', 'PreRmoderateduration', 'PreRvigorousduration']:
+                if c in df_imputed.columns:
+                    df_imputed[c] = df_imputed[c].round()
+            
+            print("  Running imputation on dataset for Table 1 (Categorical - Mode)...")
+            cat_in_data = [c for c in CATEGORICAL_FEATURES if c in df_imputed.columns]
+            if cat_in_data:
+                cat_imputer = SimpleImputer(strategy='most_frequent')
+                df_imputed[cat_in_data] = cat_imputer.fit_transform(df_imputed[cat_in_data])
+        except Exception as e:
+            print(f"  Imputation failed for Table 1: {e}")
+
         # Table 1: Baseline Characteristics
         print("  Generating Table 1: Baseline Characteristics...")
         
-        n_total = len(df_master)
+        n_total = len(df_imputed)
         t1_data = []
         
         CATEGORICAL_MAPPING = {
@@ -456,8 +484,8 @@ def generate_q1_tables(df_master):
         ]
 
         def add_cont(name, col):
-            if col in df_master.columns:
-                s_all = pd.to_numeric(df_master[col], errors='coerce').dropna()
+            if col in df_imputed.columns:
+                s_all = pd.to_numeric(df_imputed[col], errors='coerce').dropna()
                 if len(s_all) > 0:
                     mean_all = s_all.mean()
                     sd_all = s_all.std()
@@ -467,14 +495,14 @@ def generate_q1_tables(df_master):
                     })
 
         def add_cat(name, col):
-            if col in df_master.columns:
+            if col in df_imputed.columns:
                 t1_data.append({
                     'Variables': f"{name}, n (%)",
                     f'Cases (n = {n_total})': ''
                 })
                 
                 # Fill na with a string so it counts
-                series = df_master[col].fillna('Missing')
+                series = df_imputed[col].fillna('Missing')
                 counts = series.value_counts()
                 
                 # Map keys and sort if mapping exists
@@ -1004,6 +1032,7 @@ def main():
         try:
             df = pd.read_csv(file_path, low_memory=False)
             df.columns = df.columns.str.strip()
+            df = df.rename(columns={'PreRgender': 'PreBLGender', 'postblage': 'PostBLAge'})
             all_dfs.append(df)
         except:
             pass
