@@ -150,7 +150,7 @@ def start_chat_session(
             max_tokens=16384,
             temperature=0.1,
             top_p=0.95,
-            id="minimaxai/minimax-m2.5"
+            id="stepfun-ai/step-3.7-flash"
         ),
         description=(
             "You are DiabSense AI, a warm and empathetic diabetes health assistant "

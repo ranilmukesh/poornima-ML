@@ -115,6 +115,7 @@ function collectFormData() {
         current_smoking: parseInt(document.querySelector('input[name="current_smoking"]:checked')?.value || '0'),
         current_alcohol: parseInt(document.querySelector('input[name="current_alcohol"]:checked')?.value || '0'),
         PreRsleepquality: Number(document.getElementById('PreRsleepquality').value),
+        PreRmildactivity: Number(document.getElementById('PreRmildactivity').value),
         PreRmildactivityduration: Number(document.getElementById('PreRmildactivityduration').value),
         PreRmoderate: Number(document.getElementById('PreRmoderate').value),
         PreRmoderateduration: parseFloat(document.getElementById('PreRmoderateduration').value),
@@ -165,6 +166,7 @@ function validateFormData(data) {
     if (!dropSel('PreRsleepquality', 'sleep quality')) return false;
     if (!dropSel('PostRgroupname', 'a care plan')) return false;
     // Physical Activity
+    if (!dropSel('PreRmildactivity', 'mild activity frequency')) return false;
     if (!dropSel('PreRmildactivityduration', 'mild activity duration')) return false;
     if (!dropSel('PreRmoderate', 'moderate activity frequency')) return false;
     if (!dropSel('PreRmoderateduration', 'moderate activity duration')) return false;
@@ -337,7 +339,7 @@ function displayClinicalInterpretation(prediction) {
         } else {
             achieved = postAtTarget ? 'Achieved target ✅' : 'Not achieved ❌';
         }
-        targetLine = `Glycemic control target: ≤${target.toFixed(1)}% (age ${ageDisplay}) | ${achieved}`;
+        targetLine = `Glycemic Control target (HbA1c) : ≤${target.toFixed(1)}% (age ${ageDisplay}) | ${achieved}`;
     }
 
     // Update DOM
@@ -374,6 +376,17 @@ function displayFactors(factors) {
     let filtered = factors.filter(f => !f.feature.includes('group_x_'));
     if (filtered.length === 0) return;
 
+    // Deduplicate factors mapping to the same base feature (keep the one with largest absolute impact)
+    const dedupedMap = new Map();
+    filtered.forEach(factor => {
+        const base = factor.feature.replace(/_\d+(\.\d+)?$/, '');
+        const currentAbs = Math.abs(factor.impact);
+        if (!dedupedMap.has(base) || Math.abs(dedupedMap.get(base).impact) < currentAbs) {
+            dedupedMap.set(base, factor);
+        }
+    });
+    filtered = Array.from(dedupedMap.values());
+
     // Guarantee Intervention (PostRgroupname) appears in top 3
     const interventionIdx = filtered.findIndex(f => f.feature.startsWith('PostRgroupname') || f.feature === 'PostRgroupname');
     if (interventionIdx >= 0 && interventionIdx >= 3) {
@@ -394,21 +407,469 @@ function displayFactors(factors) {
     }
 
     const maxImpact = Math.max(...filtered.map(f => Math.abs(f.impact)));
+    let anyRedFlag = false; // NEW: Track if any red flag was generated
 
     filtered.forEach((factor, index) => {
-        const card = createFactorCard(factor, maxImpact);
+        // Pass currentFormData here
+        const card = createFactorCard(factor, maxImpact, currentFormData);
+        if (card.dataset.hasRedFlag === 'true') anyRedFlag = true; // Check flag
         elements.factorsContainer.appendChild(card);
         setTimeout(() => { card.classList.add('animate'); }, 50);
     });
+
+    // NEW: Append legend at the bottom ONLY if a red flag is present (Audio 1 Request)
+    if (anyRedFlag) {
+        const legend = document.createElement('div');
+        legend.className = 'red-flag-legend';
+        legend.innerHTML = `<strong>🚩 Red Flag Notice:</strong> Variables marked with a red flag indicate that the AI model's interpretation goes against usual clinical expectations for your specific data. This does not mean the habit is healthy or lowers HbA1c.`;
+        legend.style.cssText = "margin-top: 20px; padding: 12px; background: rgba(232, 93, 76, 0.08); border-left: 4px solid #E85D4C; border-radius: 4px; color: #3c1e21; font-size: 0.85rem; line-height: 1.5;";
+        elements.factorsContainer.appendChild(legend);
+    }
 }
 
-function createFactorCard(factor, maxImpact) {
+function getFormattedInputValue(feature, value) {
+    if (value === undefined || value === null || value === '') return '';
+
+    const freqMap = { 0: 'None', 1: 'Once/month', 2: '2-3×/month', 3: 'Once/week', 4: '2-3×/week', 5: '4-5×/week', 6: 'Every day' };
+    const durMap = { 0: 'None', 1: '≤10 min', 2: '10-30 min', 3: '30min-1hr', 4: '1-1.5hrs', 5: '>1.5hrs' };
+    const dietMap = { 1: 'Usually/Often', 2: 'Sometimes', 3: 'Rarely/Never' };
+    const maritalMap = { 1: 'Married', 2: 'Unmarried', 3: 'Divorcee/Separated', 4: 'Widow/Widower', 5: 'Others' };
+    const eduMap = { 1: 'No schooling', 2: 'Primary', 3: 'High school', 4: 'Intermediate', 5: 'University', 6: 'Univ+', 7: 'Others' };
+    const occMap = { 1: 'Professional', 2: 'Clerical', 3: 'Self-employed', 4: 'Unskilled', 5: 'Homemaker', 6: 'Retired', 7: 'Unemployed(able)', 8: 'Unemployed(unable)', 9: 'Others' };
+    const sleepMap = { 1: 'Very good', 2: 'Fairly good', 3: 'Fairly bad', 4: 'Very bad' };
+    const careMap = { 1: 'Standard + Yoga', 2: 'Standard care' };
+
+    switch (feature) {
+        case 'PostBLAge': return `${value} yrs`;
+        case 'PreBLGender': return value;
+        case 'PreRarea': return value === 1 ? 'Urban' : 'Rural';
+        case 'PreRmaritalstatus': return maritalMap[value] || value;
+        case 'PreReducation': return eduMap[value] || value;
+        case 'PreRpresentoccupation': return occMap[value] || value;
+        case 'PreRdiafather':
+        case 'PreRdiamother':
+        case 'PreRdiabrother':
+        case 'PreRdiasister':
+        case 'current_smoking':
+        case 'current_alcohol': return value === 1 ? 'Yes' : 'No';
+        case 'PreRsleepquality': return sleepMap[value] || value;
+        case 'PostRgroupname': return careMap[value] || value;
+        case 'PreRmildactivity':
+        case 'PreRmoderate':
+        case 'PreRvigorous': return freqMap[value] || value;
+        case 'PreRmildactivityduration':
+        case 'PreRmoderateduration':
+        case 'PreRvigorousduration': return durMap[value] || value;
+        case 'PreRskipbreakfast':
+        case 'PreRlessfruit':
+        case 'PreRlessvegetable':
+        case 'PreRmilk':
+        case 'PreRmeat':
+        case 'PreRfriedfood':
+        case 'PreRsweet': return dietMap[value] || value;
+        case 'PreRwaist': return `${value} cm`;
+        case 'PreRBMI': return `${value} kg/m²`;
+        case 'PreRsystolicfirst':
+        case 'PreRdiastolicfirst': return `${value} mmHg`;
+        case 'PreBLPPBS':
+        case 'PreBLFBS':
+        case 'PreBLCHOLESTEROL':
+        case 'PreBLTRIGLYCERIDES': return `${value} mg/dL`;
+        case 'PreBLHBA1C': return `${value}%`;
+        case 'Diabetic_Duration': return `${value} yrs`;
+        default: return value;
+    }
+}
+
+const MODIFIABLE_VARS = [
+    {
+        name: 'PreBLTRIGLYCERIDES',
+        title: 'Manage Triglycerides',
+        icon: '🩸',
+        desc: (orig, sug) => `What if your triglyceride level was ${sug} instead of ${orig}?`,
+        changeTemplate: (orig, sug) => `Triglycerides: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v >= 150,
+        getNextValue: (v) => v - 10,
+        reachedTarget: (v) => v < 150
+    },
+    {
+        name: 'PreBLCHOLESTEROL',
+        title: 'Lower Total Cholesterol',
+        icon: '🧪',
+        desc: (orig, sug) => `What if your total cholesterol was ${sug} instead of ${orig}?`,
+        changeTemplate: (orig, sug) => `Cholesterol: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v >= 200,
+        getNextValue: (v) => v - 10,
+        reachedTarget: (v) => v < 200
+    },
+    {
+        name: 'PreRsystolicfirst',
+        title: 'Control Systolic BP',
+        icon: '❤️',
+        desc: (orig, sug) => `What if your systolic blood pressure was ${sug} instead of ${orig}?`,
+        changeTemplate: (orig, sug) => `Systolic BP: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v >= 130,
+        getNextValue: (v) => v - 5,
+        reachedTarget: (v) => v < 120
+    },
+    {
+        name: 'PreRdiastolicfirst',
+        title: 'Control Diastolic BP',
+        icon: '💓',
+        desc: (orig, sug) => `What if your diastolic blood pressure was ${sug} instead of ${orig}?`,
+        changeTemplate: (orig, sug) => `Diastolic BP: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v >= 80,
+        getNextValue: (v) => v - 5,
+        reachedTarget: (v) => v < 80
+    },
+    {
+        name: 'PreRBMI',
+        title: 'Optimize Body Weight (BMI)',
+        icon: '⚖️',
+        desc: (orig, sug) => `What if your BMI was ${sug} instead of ${orig}?`,
+        changeTemplate: (orig, sug) => `BMI: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v >= 25,
+        getNextValue: (v) => Math.max(v - 0.5, 18.5),
+        reachedTarget: (v) => v < 25
+    },
+    {
+        name: 'PreRwaist',
+        title: 'Reduce Waist Circumference',
+        icon: '📏',
+        desc: (orig, sug) => `What if your waist circumference was ${sug} instead of ${orig}?`,
+        changeTemplate: (orig, sug) => `Waist: ${orig} → ${sug}`,
+        isUnfavourable: (v, gender) => v >= (gender === 'Female' ? 80 : 90),
+        getNextValue: (v) => v - 2,
+        reachedTarget: (v, gender) => v < (gender === 'Female' ? 80 : 90)
+    },
+    {
+        name: 'PreRsleepquality',
+        title: 'Improve Sleep Quality',
+        icon: '😴',
+        desc: (orig, sug) => `What if your sleep quality was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Sleep Quality: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v >= 3,
+        getNextValue: (v) => v - 1,
+        reachedTarget: (v) => v <= 2
+    },
+    {
+        name: 'PreRmildactivityduration',
+        title: 'Increase Mild Activity Duration',
+        icon: '🚶',
+        desc: (orig, sug) => `What if your mild activity duration was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Mild Activity Duration: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRmoderate',
+        title: 'Increase Moderate Activity Frequency',
+        icon: '🏃',
+        desc: (orig, sug) => `What if your moderate activity frequency was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Moderate Activity Frequency: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 5,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 5
+    },
+    {
+        name: 'PreRmoderateduration',
+        title: 'Increase Moderate Activity Duration',
+        icon: '⏱️',
+        desc: (orig, sug) => `What if your moderate activity duration was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Moderate Activity Duration: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRvigorous',
+        title: 'Increase Vigorous Activity Frequency',
+        icon: '⚡',
+        desc: (orig, sug) => `What if your vigorous activity frequency was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Vigorous Activity Frequency: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 4,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 4
+    },
+    {
+        name: 'PreRvigorousduration',
+        title: 'Increase Vigorous Activity Duration',
+        icon: '💪',
+        desc: (orig, sug) => `What if your vigorous activity duration was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Vigorous Activity Duration: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'current_smoking',
+        title: 'Quit Smoking',
+        icon: '🚭',
+        desc: (orig, sug) => `What if your smoking status was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Smoking: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v === 1,
+        getNextValue: (v) => 0,
+        reachedTarget: (v) => v === 0
+    },
+    {
+        name: 'current_alcohol',
+        title: 'Limit Alcohol Intake',
+        icon: '🍷',
+        desc: (orig, sug) => `What if your alcohol consumption was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Alcohol: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v === 1,
+        getNextValue: (v) => 0,
+        reachedTarget: (v) => v === 0
+    },
+    {
+        name: 'PreRskipbreakfast',
+        title: 'Eat Regular Breakfast',
+        icon: '🍳',
+        desc: (orig, sug) => `What if your breakfast habit was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Breakfast Habit: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRlessfruit',
+        title: 'Increase Fruit Consumption',
+        icon: '🍎',
+        desc: (orig, sug) => `What if your fruit intake was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Fruit Intake: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRlessvegetable',
+        title: 'Increase Vegetable Consumption',
+        icon: '🥦',
+        desc: (orig, sug) => `What if your vegetable intake was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Vegetable Intake: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRmilk',
+        title: 'Increase Milk/Curd Intake',
+        icon: '🥛',
+        desc: (orig, sug) => `What if your milk/curd intake was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Milk/Curd Intake: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRfriedfood',
+        title: 'Reduce Fried Food Intake',
+        icon: '🍟',
+        desc: (orig, sug) => `What if your fried food intake was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Fried Food: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    },
+    {
+        name: 'PreRsweet',
+        title: 'Reduce Sweet Intake',
+        icon: '🍬',
+        desc: (orig, sug) => `What if your sweet intake was "${sug}" instead of "${orig}"?`,
+        changeTemplate: (orig, sug) => `Sweet Intake: ${orig} → ${sug}`,
+        isUnfavourable: (v) => v < 3,
+        getNextValue: (v) => v + 1,
+        reachedTarget: (v) => v >= 3
+    }
+];
+
+function getRiskLevelString(hba1c) {
+    if (hba1c < 5.7) return 'NORMAL';
+    if (hba1c < 6.5) return 'PRE_DIABETIC';
+    if (hba1c < 8.0) return 'DIABETIC';
+    return 'HIGH_RISK';
+}
+
+async function simulateScenario(variable, formData, baselineHba1c) {
+    let currentValue = formData[variable.name];
+    let gender = formData.PreBLGender;
+    let nextValue = currentValue;
+    let iteration = 0;
+    const maxIterations = 100;
+    const FLOAT_TOLERANCE = 1e-8;
+
+    let modifiedData = { ...formData };
+
+    while (iteration < maxIterations) {
+        if (variable.reachedTarget(nextValue, gender)) {
+            break;
+        }
+
+        let updatedValue = variable.getNextValue(nextValue);
+        if (updatedValue === nextValue) {
+            break;
+        }
+        nextValue = updatedValue;
+        iteration++;
+
+        modifiedData[variable.name] = nextValue;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/predict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(modifiedData)
+            });
+            if (!response.ok) continue;
+
+            const predResult = await response.json();
+            const predictedVal = predResult.predicted_hba1c;
+            const reduction = baselineHba1c - predictedVal;
+
+            console.log(`[What-If Sim] Var: ${variable.name}, Val: ${nextValue}, Pred: ${predictedVal.toFixed(4)}, Reduction: ${reduction.toFixed(4)}`);
+
+            if (reduction >= 0.10 - FLOAT_TOLERANCE) {
+                const origLabel = getFormattedInputValue(variable.name, currentValue);
+                const sugLabel = getFormattedInputValue(variable.name, nextValue);
+
+                return {
+                    scenario_id: 0,
+                    title: variable.title,
+                    description: typeof variable.desc === 'function' ? variable.desc(origLabel, sugLabel) : variable.desc,
+                    change_summary: variable.changeTemplate(origLabel, sugLabel),
+                    original_hba1c: baselineHba1c,
+                    modified_hba1c: predictedVal,
+                    hba1c_delta: Number(reduction.toFixed(2)),
+                    improvement_percent: Number(((reduction / baselineHba1c) * 100).toFixed(2)),
+                    icon: variable.icon,
+                    factor_changed: variable.name,
+                    original_value: String(currentValue),
+                    suggested_value: String(nextValue)
+                };
+            }
+        } catch (err) {
+            console.error(`Error predicting scenario for ${variable.name}:`, err);
+        }
+    }
+
+    return null;
+}
+
+async function runFrontendWhatIfAnalysis(formData, baselineHba1c) {
+    const shapFactors = currentExplanation && currentExplanation.top_contributing_factors
+        ? currentExplanation.top_contributing_factors
+        : [];
+
+    const eligibleVars = MODIFIABLE_VARS.filter(variable => {
+        const val = formData[variable.name];
+        if (val === undefined || val === null || val === '') return false;
+
+        const gender = formData.PreBLGender;
+        if (!variable.isUnfavourable(val, gender)) return false;
+
+        const hasPositiveShap = shapFactors.some(f => {
+            const baseFeature = f.feature.replace(/_\d+(\.\d+)?$/, '');
+            return baseFeature === variable.name && f.impact > 0;
+        });
+
+        return hasPositiveShap;
+    });
+
+    const promises = eligibleVars.map(variable => simulateScenario(variable, formData, baselineHba1c));
+    const results = await Promise.all(promises);
+    return results.filter(r => r !== null);
+}
+
+function createFactorCard(factor, maxImpact, formData) {
     const card = document.createElement('div');
     card.className = 'factor-card';
 
     const isPositive = factor.impact > 0;
     const normalizedImpact = (Math.abs(factor.impact) / maxImpact) * 100;
-    const featureName = formatFeatureName(factor.feature);
+
+    // Normalize OHE feature names to match base names
+    const baseFeature = factor.feature.replace(/_\d+(\.\d+)?$/, '');
+
+    // Append the mapped input value to the feature name
+    let featureName = formatFeatureName(factor.feature);
+    if (formData && formData[baseFeature] !== undefined) {
+        const formattedValue = getFormattedInputValue(baseFeature, formData[baseFeature]);
+        if (formattedValue) {
+            featureName += ` (${formattedValue})`;
+        }
+    }
+
+    // CHANGE 1 & 3: Override backend interpretation and apply Red Flag rules
+    let interpretationText = factor.interpretation;
+    const directionWord = isPositive ? 'higher' : 'lower';
+
+    // Standardized overrides for all Table 1 and Table 2 features
+    const overrideMap = {
+        // Table 2 (Variables without dropdowns)
+        'PostBLAge': `Based on your age, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreBLGender': `Based on your gender, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRarea': `Based on your place of residence, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRmaritalstatus': `Based on your marital status, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreReducation': `Based on your education level, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRpresentoccupation': `Based on your occupation, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRwaist': `Based on your waist circumference, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRBMI': `Based on your BMI, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRsystolicfirst': `Based on your systolic blood pressure, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRdiastolicfirst': `Based on your diastolic blood pressure, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreBLFBS': `Based on your fasting blood sugar, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreBLPPBS': `Based on your postprandial blood sugar, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreBLHBA1C': `Based on your current HbA1c level, the model predicts a slightly ${directionWord} HbA1c after the selected prediction period.`,
+        'PreBLCHOLESTEROL': `Based on your total cholesterol level, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreBLTRIGLYCERIDES': `Based on your triglyceride level, the model predicts a slightly ${directionWord} HbA1c.`,
+        'Diabetic_Duration': `Based on your duration of diabetes, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PostRgroupname': `Based on your selected care plan, the model predicts a slightly ${directionWord} HbA1c.`,
+
+        // Table 1 (Variables with dropdowns / binary / categorical features)
+        'PreRdiafather': `Based on your father's diabetes history, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRdiamother': `Based on your mother's diabetes history, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRdiabrother': `Based on your brother's diabetes history, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRdiasister': `Based on your sister's diabetes history, the model predicts a slightly ${directionWord} HbA1c.`,
+        'current_smoking': `Based on your smoking status, the model predicts a slightly ${directionWord} HbA1c.`,
+        'current_alcohol': `Based on your alcohol consumption, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRsleepquality': `Based on your sleep quality, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRmildactivityduration': `Based on your mild physical activity duration, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRmoderate': `Based on your moderate physical activity frequency, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRmoderateduration': `Based on your moderate physical activity duration, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRvigorous': `Based on your vigorous physical activity frequency, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRvigorousduration': `Based on your vigorous physical activity duration, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRskipbreakfast': `Based on your breakfast habits, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRlessfruit': `Based on your fruit consumption, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRlessvegetable': `Based on your vegetable consumption, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRmilk': `Based on your milk or curd intake, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRmeat': `Based on your meat or fish intake, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRfriedfood': `Based on your fried food intake, the model predicts a slightly ${directionWord} HbA1c.`,
+        'PreRsweet': `Based on your sweet intake, the model predicts a slightly ${directionWord} HbA1c.`
+    };
+
+    if (overrideMap[baseFeature]) {
+        interpretationText = overrideMap[baseFeature];
+    }
+
+    // Change 3: Red Flag Rules implementation using baseFeature and normalized checks
+    const redFlagVars = ['PreRskipbreakfast', 'PreRlessfruit', 'PreRlessvegetable', 'PreRmilk', 'PreRfriedfood', 'PreRsweet'];
+    let hasRedFlag = false; // NEW: Track if this card gets a red flag
+
+    if (redFlagVars.includes(baseFeature)) {
+        const val = formData ? formData[baseFeature] : null;
+        const isLower = factor.impact < 0;
+        const isHigher = factor.impact > 0;
+
+        // Define the uniform warning text
+        const warningText = "<br><br><span style='color: #E85D4C; font-weight: 600;'>🚩 Interpret with caution: This model result goes against usual clinical expectation. It does not mean this habit lowers HbA1c.</span>";
+
+        if ((val === 1 && isLower) || (val === 2 && isLower) || (val === 3 && isHigher)) {
+            interpretationText += warningText;
+            hasRedFlag = true;
+        }
+    }
+
+    card.dataset.hasRedFlag = hasRedFlag; // NEW: Store flag status in the DOM element
 
     card.innerHTML = `
         <div class="factor-header">
@@ -417,7 +878,7 @@ function createFactorCard(factor, maxImpact) {
                 ${factor.direction}
             </span>
         </div>
-        <p class="factor-interpretation">${factor.interpretation}</p>
+        <p class="factor-interpretation">${interpretationText}</p>
         <div class="factor-bar">
             <div class="factor-bar-fill ${isPositive ? 'positive' : 'negative'}" 
                  style="width: 0%"
@@ -884,9 +1345,77 @@ async function fetchWhatIfAnalysis(formData) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const whatifData = await response.json();
-        currentWhatIf = whatifData;
+        const baselineHba1c = whatifData.original_hba1c;
+
+        // Keep backend intervention scenarios (PostRgroupname or group_x_)
+        const backendInterventions = (whatifData.scenarios || []).filter(s => {
+            const feat = s.feature || s.factor_changed || '';
+            return feat === 'PostRgroupname' || feat.includes('group_x_');
+        });
+
+        // Generate other modifiable scenarios on the frontend
+        const frontendScenarios = await runFrontendWhatIfAnalysis(formData, baselineHba1c);
+
+        // Combine both
+        const allScenarios = [...backendInterventions, ...frontendScenarios];
+
+        // Recalculate combined outcome if we have multiple scenarios
+        let combinedHba1c = null;
+        let combinedRiskLevel = null;
+
+        if (allScenarios.length > 1) {
+            const combinedData = { ...formData };
+            allScenarios.forEach(s => {
+                const val = s.suggested_value;
+                combinedData[s.factor_changed] = isNaN(val) ? val : Number(val);
+            });
+
+            try {
+                const combinedResponse = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(combinedData)
+                });
+                if (combinedResponse.ok) {
+                    const combinedResult = await combinedResponse.json();
+                    combinedHba1c = combinedResult.predicted_hba1c;
+                    combinedRiskLevel = getRiskLevelString(combinedHba1c);
+                }
+            } catch (err) {
+                console.error("Error calculating combined outcome:", err);
+            }
+        } else if (allScenarios.length === 1) {
+            combinedHba1c = allScenarios[0].modified_hba1c;
+            combinedRiskLevel = getRiskLevelString(combinedHba1c);
+        }
+
+        // Sort: Care Plan / Intervention first, then by reduction descending
+        allScenarios.sort((a, b) => {
+            const aFeat = a.feature || a.factor_changed || '';
+            const bFeat = b.feature || b.factor_changed || '';
+            const aIsIntervention = aFeat === 'PostRgroupname' || aFeat.includes('group_x_');
+            const bIsIntervention = bFeat === 'PostRgroupname' || bFeat.includes('group_x_');
+            if (aIsIntervention && !bIsIntervention) return -1;
+            if (bIsIntervention && !aIsIntervention) return 1;
+            return b.hba1c_delta - a.hba1c_delta;
+        });
+
+        allScenarios.forEach((s, idx) => {
+            s.scenario_id = idx + 1;
+        });
+
+        const mergedWhatifData = {
+            original_hba1c: baselineHba1c,
+            original_risk_level: whatifData.original_risk_level,
+            scenarios: allScenarios,
+            best_scenario: allScenarios.length > 0 ? allScenarios[0] : null,
+            combined_hba1c: combinedHba1c,
+            combined_risk_level: combinedRiskLevel
+        };
+
+        currentWhatIf = mergedWhatifData;
         elements.whatifLoading.style.display = 'none';
-        displayWhatIfAnalysis(whatifData);
+        displayWhatIfAnalysis(mergedWhatifData);
     } catch (error) {
         console.error('What-If API Error:', error);
         elements.whatifLoading.style.display = 'none';
@@ -897,23 +1426,29 @@ async function fetchWhatIfAnalysis(formData) {
 }
 
 function displayWhatIfAnalysis(data) {
-    if (!data.scenarios || data.scenarios.length === 0) {
+    const validScenarios = data.scenarios || [];
+
+    if (!validScenarios || validScenarios.length === 0) {
+        const isHealthy = data.original_hba1c && data.original_hba1c < 5.7;
+        const msg = isHealthy
+            ? "✅ Your current health parameters are already in healthy ranges!"
+            : "⚠️ No single lifestyle change was predicted to significantly lower your HbA1c further on its own. Consider combining multiple interventions.";
         elements.whatifScenariosGrid.innerHTML = `
-            <div class="whatif-empty"><p>✅ Your current health parameters are already in healthy ranges!</p></div>
+            <div class="whatif-empty"><p>${msg}</p></div>
         `;
         return;
     }
 
-    data.scenarios.forEach((scenario, index) => {
+    validScenarios.forEach((scenario, index) => {
         const card = createScenarioCard(scenario);
         elements.whatifScenariosGrid.appendChild(card);
         setTimeout(() => { card.classList.add('animate'); }, 100 + index * 150);
     });
 
-    if (data.combined_hba1c !== null && data.combined_hba1c !== undefined && data.scenarios.length > 1) {
+    if (data.combined_hba1c !== null && data.combined_hba1c !== undefined && validScenarios.length > 1) {
         setTimeout(() => {
             displayCombinedOutcome(data);
-        }, 100 + data.scenarios.length * 150 + 200);
+        }, 100 + validScenarios.length * 150 + 200);
     }
 }
 
